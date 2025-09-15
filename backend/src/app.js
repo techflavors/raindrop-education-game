@@ -29,7 +29,10 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 const authRoutes = require('./routes/auth');
+const questionRoutes = require('./routes/questions');
+
 app.use('/api/auth', authRoutes);
+app.use('/api/questions', questionRoutes);
 
 // Database connection
 mongoose.connect(MONGODB_URI, {
