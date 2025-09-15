@@ -1,0 +1,52 @@
+Role: You are a web game developer. 
+Task:
+Create a game where studemts can battle with other students with respect to grading.
+This game is for kids, so make it more fun and colorful.
+
+Concept:
+Teachers will assign a set of questions to the students in a class. 
+Students answers those questions.
+Students can see their progress, grades and compartive analysis with other students.
+Students can battle with other students by taking more challenging questions and select high scored questions.
+
+Grades: 1st grade to 8th grade
+
+Admin:
+Use a default user name and password (admin/password)
+Admin should be able to create Teachers
+Admin should be able to create Students
+Admin should be able to assign Grade, Subjects, students to the Teachers
+
+Teachers:
+Each teacher will have a grade, subject and set of students assigned.
+Teachers can create questions or ask LLM to create questions.
+Teachers should have a provision to assign set questions to a class.
+
+Questions:
+Each questions should have answers in complexity level, beginner, advanced and expert.
+Each level will have defined scores.
+Question should have single like, pictorical etc...
+Teachers should have option to generate all questions using LLM
+
+Students:
+Students will be assigned with questions.
+Note all students will get same set of questions on the same order.
+For each correct questions they will collect a rain drop.
+Idea is to get a full cup of water.
+Students should be able to see their levels of collection compare to other students (note: other student information is anonymous)
+Students can anytime ask for challenging question, means they can battle with other students
+
+Game:
+Time Boxed
+Scores or raindrops they collect decide students grading
+Should be more interaction and pictorical
+Should be fun and joy.
+Make it more colorful and interactive.
+Save the scores
+
+Systems to design:
+Backend with API;s for all functionalities
+Use MongoDB as your datastore (mongo is running locally on default port)
+Frontend should be colorful and interactive (not a standard way of HTML components)
+Choose the right framework for this. Give me few options, i can help choosing one.
+
