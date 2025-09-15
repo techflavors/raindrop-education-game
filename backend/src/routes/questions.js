@@ -48,7 +48,7 @@ router.post('/generate', auth, async (req, res) => {
     const { grade, subject, difficulty, count } = value;
 
     // Check if teacher is assigned to this grade/subject
-    const teacher = await User.findById(req.user.userId);
+    const teacher = req.user; // Use req.user directly since middleware already loads the user
     if (!teacher.profile.assignedGrades?.includes(grade) || 
         !teacher.profile.subjects?.includes(subject)) {
       return res.status(403).json({ 
@@ -66,7 +66,7 @@ router.post('/generate', auth, async (req, res) => {
     for (const questionData of generatedQuestions) {
       const question = new Question({
         ...questionData,
-        teacherId: req.user.userId,
+        teacherId: req.user._id,
         grade,
         subject
       });
@@ -97,7 +97,7 @@ router.get('/my-questions', auth, async (req, res) => {
     const { grade, subject, difficulty, page = 1, limit = 20 } = req.query;
     
     const filter = { 
-      teacherId: req.user.userId,
+      teacherId: req.user._id,
       isActive: true
     };
     
@@ -139,7 +139,7 @@ router.post('/create', auth, async (req, res) => {
     }
 
     // Check if teacher is assigned to this grade/subject
-    const teacher = await User.findById(req.user.userId);
+    const teacher = req.user; // Use req.user directly
     if (!teacher.profile.assignedGrades?.includes(value.grade) || 
         !teacher.profile.subjects?.includes(value.subject)) {
       return res.status(403).json({ 
@@ -149,7 +149,7 @@ router.post('/create', auth, async (req, res) => {
 
     const question = new Question({
       ...value,
-      teacherId: req.user.userId,
+      teacherId: req.user._id,
       generatedByAI: false
     });
 

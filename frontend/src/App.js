@@ -6,8 +6,6 @@ import './App.css';
 // Import components
 import LoginPage from './components/LoginPage';
 import Dashboard from './components/Dashboard';
-import AdminDashboard from './components/AdminDashboard';
-import TeacherDashboard from './components/TeacherDashboard';
 
 function App() {
   return (
@@ -23,8 +21,8 @@ function App() {
             <Route path="/" element={<WelcomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+            <Route path="/admin/dashboard" element={<Dashboard />} />
+            <Route path="/teacher/dashboard" element={<Dashboard />} />
             <Route path="/student/dashboard" element={<Dashboard />} />
           </Routes>
         </motion.div>

@@ -29,15 +29,10 @@ function Dashboard() {
 
       if (response.ok) {
         const userData = await response.json();
-        setUser(userData);
+        setUser(userData.user); // Extract user from response
         
-        // Redirect based on role
-        if (userData.role === 'admin') {
-          navigate('/admin/dashboard');
-        } else if (userData.role === 'teacher') {
-          navigate('/teacher/dashboard');
-        }
-        // Students stay here for now
+        // Don't redirect - let Dashboard component handle all roles
+        console.log('User authenticated:', userData.user.role, userData.user.username);
       } else {
         localStorage.removeItem('token');
         navigate('/login');
@@ -69,8 +64,17 @@ function Dashboard() {
     );
   }
 
-  if (!user) {
-    return null;
+  if (!user || !user.profile) {
+    return (
+      <motion.div
+        className="loading-screen"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
+        <div className="loading-spinner">🌧️</div>
+        <p>Loading your dashboard...</p>
+      </motion.div>
+    );
   }
 
   // Render different dashboards based on role

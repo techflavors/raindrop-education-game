@@ -3,7 +3,7 @@ const axios = require('axios');
 class QuestionGeneratorService {
   constructor() {
     this.ollamaUrl = 'http://localhost:11434';
-    this.defaultModel = 'llama3.1:8b';
+    this.defaultModel = 'llama3.2:3b'; // Updated to match available model
   }
 
   // Check if Ollama is running
@@ -39,7 +39,7 @@ class QuestionGeneratorService {
       });
 
       const generatedText = response.data.response;
-      return this.parseQuestions(generatedText);
+      return this.parseQuestions(generatedText, difficulty);
     } catch (error) {
       console.error('Question generation error:', error.message);
       // Fallback to sample questions if Ollama fails
@@ -130,7 +130,7 @@ Generate exactly ${count} questions in valid JSON format:`;
   }
 
   // Parse AI-generated questions
-  parseQuestions(text) {
+  parseQuestions(text, difficulty = 'beginner') {
     try {
       // Try to extract JSON from the response
       const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -143,7 +143,7 @@ Generate exactly ${count} questions in valid JSON format:`;
               text: a.text,
               isCorrect: a.isCorrect
             })),
-            difficulty: q.difficulty,
+            difficulty: difficulty, // Use the passed difficulty parameter
             explanation: q.explanation || '',
             generatedByAI: true
           }));
@@ -151,7 +151,7 @@ Generate exactly ${count} questions in valid JSON format:`;
       }
       
       // If JSON parsing fails, try to extract questions manually
-      return this.parseQuestionsManually(text);
+      return this.parseQuestionsManually(text, difficulty);
     } catch (error) {
       console.error('Question parsing error:', error);
       throw new Error('Failed to parse generated questions');
@@ -159,7 +159,7 @@ Generate exactly ${count} questions in valid JSON format:`;
   }
 
   // Manual parsing fallback
-  parseQuestionsManually(text) {
+  parseQuestionsManually(text, difficulty = 'beginner') {
     const questions = [];
     const lines = text.split('\n').filter(line => line.trim());
     
@@ -173,7 +173,7 @@ Generate exactly ${count} questions in valid JSON format:`;
           questions.push({
             questionText: currentQuestion,
             answers: currentAnswers,
-            difficulty: 'beginner',
+            difficulty: difficulty, // Use the passed difficulty parameter
             generatedByAI: true
           });
         }

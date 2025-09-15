@@ -47,7 +47,7 @@ async function testSetup() {
         profile: {
           firstName: 'John',
           lastName: 'Doe',
-          grade: '3rd'
+          grade: '3'
         }
       });
 
@@ -55,8 +55,30 @@ async function testSetup() {
       console.log('✅ Test student created successfully');
     }
 
+    // Create a test teacher
+    const existingTeacher = await User.findOne({ username: 'teacher1' });
+    if (existingTeacher) {
+      console.log('ℹ️ Test teacher already exists');
+    } else {
+      const teacher = new User({
+        username: 'teacher1',
+        password: 'password123',
+        role: 'teacher',
+        profile: {
+          firstName: 'Sarah',
+          lastName: 'Johnson',
+          assignedGrades: ['3', '4', '5'],
+          subjects: ['Math', 'Science']
+        }
+      });
+
+      await teacher.save();
+      console.log('✅ Test teacher created successfully');
+    }
+
     console.log('\n🎯 Setup completed! You can now test:');
     console.log('- Login with admin/password123 (admin role)');
+    console.log('- Login with teacher1/password123 (teacher role)');
     console.log('- Login with student1/password123 (student role)');
 
   } catch (error) {
