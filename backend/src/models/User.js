@@ -37,7 +37,7 @@ const userSchema = new mongoose.Schema({
     },
     grade: {
       type: String,
-      enum: ['K', '1', '2', '3', '4', '5', '6', '7', '8'],
+      enum: ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
       required: function() {
         return this.role === 'student';
       }
@@ -45,7 +45,7 @@ const userSchema = new mongoose.Schema({
     // Teacher-specific fields
     assignedGrades: [{
       type: String,
-      enum: ['K', '1', '2', '3', '4', '5', '6', '7', '8']
+      enum: ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
     }],
     subjects: [{
       type: String,

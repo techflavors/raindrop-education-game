@@ -68,9 +68,11 @@ function LoginPage() {
         {/* Login Form */}
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
+            <label htmlFor="username">👤 Username</label>
             <input
+              id="username"
               type="text"
-              placeholder="Username"
+              placeholder="Enter your username"
               value={credentials.username}
               onChange={(e) => setCredentials({...credentials, username: e.target.value})}
               required
@@ -79,9 +81,11 @@ function LoginPage() {
           </div>
           
           <div className="form-group">
+            <label htmlFor="password">🔒 Password</label>
             <input
+              id="password"
               type="password"
-              placeholder="Password"
+              placeholder="Enter your password"
               value={credentials.password}
               onChange={(e) => setCredentials({...credentials, password: e.target.value})}
               required
@@ -96,7 +100,7 @@ function LoginPage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            {loading ? '🔄 Logging in...' : '🌈 Login'}
+            {loading ? '🔄 Logging in...' : '✨ Start Learning!'}
           </motion.button>
         </form>
 

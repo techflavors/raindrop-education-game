@@ -14,7 +14,7 @@ const questionSchema = Joi.object({
   subject: Joi.string().valid('Math', 'Science', 'English', 'History', 'Art', 'Music', 'PE').required(),
   questionText: Joi.string().min(10).max(500).required(),
   questionType: Joi.string().valid('multiple-choice', 'true-false', 'fill-blank').default('multiple-choice'),
-  difficulty: Joi.string().valid('beginner', 'advanced', 'expert').default('beginner'),
+  difficulty: Joi.string().valid('easy', 'beginner', 'medium', 'advanced', 'expert').default('beginner'),
   answers: Joi.array().items(
     Joi.object({
       text: Joi.string().required(),
@@ -28,7 +28,7 @@ const questionSchema = Joi.object({
 const generateSchema = Joi.object({
   grade: Joi.string().valid('K', '1', '2', '3', '4', '5', '6', '7', '8').required(),
   subject: Joi.string().valid('Math', 'Science', 'English', 'History', 'Art', 'Music', 'PE').required(),
-  difficulty: Joi.string().valid('beginner', 'advanced', 'expert').default('beginner'),
+  difficulty: Joi.string().valid('easy', 'beginner', 'medium', 'advanced', 'expert').default('beginner'),
   count: Joi.number().integer().min(1).max(20).default(5)
 });
 

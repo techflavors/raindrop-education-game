@@ -98,7 +98,7 @@ function WelcomePage() {
             className="start-button"
             onClick={() => window.location.href = '/login'}
           >
-            🌈 Start Rainbow
+            � Let's Start Learning!
           </button>
         </motion.div>
 

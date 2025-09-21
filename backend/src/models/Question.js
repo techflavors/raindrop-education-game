@@ -9,12 +9,12 @@ const questionSchema = new mongoose.Schema({
   grade: {
     type: String,
     required: true,
-    enum: ['K', '1', '2', '3', '4', '5', '6', '7', '8']
+    enum: ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
   },
   subject: {
     type: String,
     required: true,
-    enum: ['Math', 'Science', 'English', 'History', 'Art', 'Music', 'PE']
+    enum: ['Math', 'Science', 'English', 'History', 'Geography', 'Art', 'Music', 'PE']
   },
   questionText: {
     type: String,
@@ -28,7 +28,7 @@ const questionSchema = new mongoose.Schema({
   },
   difficulty: {
     type: String,
-    enum: ['beginner', 'advanced', 'expert'],
+    enum: ['easy', 'beginner', 'medium', 'advanced', 'expert'],
     default: 'beginner'
   },
   answers: [{

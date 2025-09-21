@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
+import TestManagement from './TestManagement';
+import TestCreation from './TestCreation';
 
 const TeacherDashboard = ({ user, onLogout }) => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -20,12 +22,17 @@ const TeacherDashboard = ({ user, onLogout }) => {
   const [generationProgress, setGenerationProgress] = useState(0);
   const [generationStep, setGenerationStep] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Test-related state
+  const [showTestCreation, setShowTestCreation] = useState(false);
+  
   const [filters, setFilters] = useState({
     grade: '',
     subject: '',
     difficulty: '',
     source: '' // 'ai' or 'manual'
   });
+  const [showQuestions, setShowQuestions] = useState(false);
   const [generateForm, setGenerateForm] = useState({
     grade: '',
     subject: '',
@@ -108,7 +115,7 @@ const TeacherDashboard = ({ user, onLogout }) => {
       const headers = { Authorization: `Bearer ${token}` };
 
       const [questionsRes, statsRes, aiStatusRes] = await Promise.all([
-        axios.get('http://localhost:3000/api/questions/my-questions', { headers }),
+        axios.get('http://localhost:3000/api/questions/my-questions?limit=1000', { headers }),
         axios.get('http://localhost:3000/api/questions/stats', { headers }),
         axios.get('http://localhost:3000/api/questions/ai-status', { headers })
       ]);
@@ -313,6 +320,21 @@ const TeacherDashboard = ({ user, onLogout }) => {
     });
   };
 
+  // Test-related functions
+  const handleTestCreated = (newTest) => {
+    showNotification(`🎉 Test "${newTest.title}" created successfully!`, 'success');
+    setShowTestCreation(false);
+    setActiveTab('tests'); // Switch to tests tab to show the new test
+  };
+
+  const handleCreateTest = () => {
+    setShowTestCreation(true);
+  };
+
+  const handleBackToTests = () => {
+    setShowTestCreation(false);
+  };
+
   const clearFilters = () => {
     setFilters({
       grade: '',
@@ -321,6 +343,17 @@ const TeacherDashboard = ({ user, onLogout }) => {
       source: ''
     });
     setSearchTerm('');
+    setShowQuestions(false);
+  };
+
+  const handleViewQuestions = () => {
+    if (filters.grade && filters.subject) {
+      setShowQuestions(true);
+    }
+  };
+
+  const handleBackToFilters = () => {
+    setShowQuestions(false);
   };
 
   const renderOverview = () => (
@@ -617,9 +650,10 @@ const TeacherDashboard = ({ user, onLogout }) => {
           <select 
             value={filters.grade} 
             onChange={(e) => setFilters({...filters, grade: e.target.value})}
-            className="filter-select"
+            className="filter-select required"
+            required
           >
-            <option value="">All Grades</option>
+            <option value="">Select Grade *</option>
             {user.profile.assignedGrades?.map(grade => (
               <option key={grade} value={grade}>Grade {grade}</option>
             ))}
@@ -628,9 +662,10 @@ const TeacherDashboard = ({ user, onLogout }) => {
           <select 
             value={filters.subject} 
             onChange={(e) => setFilters({...filters, subject: e.target.value})}
-            className="filter-select"
+            className="filter-select required"
+            required
           >
-            <option value="">All Subjects</option>
+            <option value="">Select Subject *</option>
             {user.profile.subjects?.map(subject => (
               <option key={subject} value={subject}>{subject}</option>
             ))}
@@ -642,7 +677,9 @@ const TeacherDashboard = ({ user, onLogout }) => {
             className="filter-select"
           >
             <option value="">All Difficulties</option>
+            <option value="easy">Easy</option>
             <option value="beginner">Beginner</option>
+            <option value="medium">Medium</option>
             <option value="advanced">Advanced</option>
             <option value="expert">Expert</option>
           </select>
@@ -657,6 +694,14 @@ const TeacherDashboard = ({ user, onLogout }) => {
             <option value="manual">Manual Created</option>
           </select>
           
+          <button 
+            className="view-questions-btn"
+            onClick={handleViewQuestions}
+            disabled={!filters.grade || !filters.subject}
+          >
+            📋 View Questions
+          </button>
+          
           {(searchTerm || Object.values(filters).some(f => f)) && (
             <button 
               className="clear-filters-btn"
@@ -669,12 +714,48 @@ const TeacherDashboard = ({ user, onLogout }) => {
         </div>
       </motion.div>
 
-      <motion.div 
-        className="questions-stats-bar"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-      >
+      {!showQuestions ? (
+        <motion.div 
+          className="select-filters-message"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <div className="message-content">
+            <h3>📚 Select Grade and Subject</h3>
+            <p>Please select a grade and subject from the filters above, then click "View Questions" to see your question bank.</p>
+            <div className="filter-reminder">
+              <span className={`filter-status ${filters.grade ? 'selected' : 'pending'}`}>
+                Grade: {filters.grade ? `Grade ${filters.grade}` : 'Not selected'}
+              </span>
+              <span className={`filter-status ${filters.subject ? 'selected' : 'pending'}`}>
+                Subject: {filters.subject || 'Not selected'}
+              </span>
+            </div>
+          </div>
+        </motion.div>
+      ) : (
+        <>
+          <motion.div 
+            className="questions-header-info"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <div className="selected-filters">
+              <h3>📋 Questions for Grade {filters.grade} - {filters.subject}</h3>
+              <button className="back-to-filters-btn" onClick={handleBackToFilters}>
+                ← Back to Filter Selection
+              </button>
+            </div>
+          </motion.div>
+
+          <motion.div 
+            className="questions-stats-bar"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
         <div className="stats-item">
           <span className="stats-number">{filteredQuestions.length}</span>
           <span className="stats-label">
@@ -754,114 +835,119 @@ const TeacherDashboard = ({ user, onLogout }) => {
             )}
           </motion.div>
         ) : (
-          <div className="questions-grid">
-            {filteredQuestions.map((question, index) => (
-              <motion.div 
-                key={question._id} 
-                className="question-card enhanced"
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 * index }}
-                whileHover={{ y: -5, boxShadow: "0 15px 40px rgba(0, 0, 0, 0.3)" }}
-              >
-                <div className="question-header enhanced">
-                  <div className="question-meta enhanced">
-                    <span className={`difficulty-badge ${question.difficulty} enhanced`}>
-                      <span className="badge-icon">
-                        {question.difficulty === 'beginner' ? '🌱' : 
-                         question.difficulty === 'advanced' ? '🚀' : '🏆'}
-                      </span>
-                      {question.difficulty}
-                    </span>
-                    <span className="subject-badge enhanced">
-                      <span className="badge-icon">📖</span>
-                      {question.subject}
-                    </span>
-                    <span className="grade-badge enhanced">
-                      <span className="badge-icon">🎓</span>
-                      Grade {question.grade}
-                    </span>
-                    {question.generatedByAI && (
-                      <span className="ai-badge enhanced">
-                        <span className="badge-icon ai-sparkle">🤖</span>
-                        AI Generated
-                      </span>
-                    )}
-                  </div>
-                  <div className="question-actions">
-                    <motion.button 
-                      className="preview-btn"
-                      onClick={() => handlePreviewQuestion(question)}
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      title="Preview Question"
-                    >
-                      👁️
-                    </motion.button>
-                    <motion.button 
-                      className="edit-btn enhanced"
-                      onClick={() => handleEditQuestion(question)}
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      title="Edit Question"
-                    >
-                      ✏️
-                    </motion.button>
-                    <motion.button 
-                      className="delete-btn enhanced"
-                      onClick={() => handleDeleteQuestion(question._id)}
-                      whileHover={{ scale: 1.1, rotate: 5 }}
-                      whileTap={{ scale: 0.9 }}
-                      title="Delete Question"
-                    >
-                      <span className="delete-icon">🗑️</span>
-                    </motion.button>
-                  </div>
-                </div>
-                
-                <div className="question-content enhanced">
-                  <h4 className="question-text">{question.questionText}</h4>
-                  <div className="answers-preview enhanced">
-                    {question.answers.slice(0, 2).map((answer, answerIndex) => (
-                      <motion.div 
-                        key={answerIndex} 
-                        className={`answer-option enhanced preview ${answer.isCorrect ? 'correct' : ''}`}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.1 * answerIndex }}
-                      >
-                        <span className="option-letter">{String.fromCharCode(65 + answerIndex)}</span>
-                        <span className="option-text">{answer.text}</span>
-                        {answer.isCorrect && <span className="correct-indicator">✓</span>}
-                      </motion.div>
-                    ))}
-                    {question.answers.length > 2 && (
-                      <div className="more-answers">
-                        + {question.answers.length - 2} more options
+          <div className="questions-table-container">
+            <table className="questions-table">
+              <thead>
+                <tr>
+                  <th className="question-col">Question</th>
+                  <th className="difficulty-col">Difficulty</th>
+                  <th className="source-col">Source</th>
+                  <th className="actions-col">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredQuestions.map((question, index) => (
+                  <motion.tr 
+                    key={question._id} 
+                    className="question-row"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.05 * index }}
+                    whileHover={{ backgroundColor: "#f8f9fa" }}
+                  >
+                    <td className="question-col">
+                      <div className="question-text">
+                        {question.questionText.length > 100 
+                          ? `${question.questionText.substring(0, 100)}...` 
+                          : question.questionText
+                        }
                       </div>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="question-footer">
-                  <div className="creation-info">
-                    <span className="creation-date">
-                      📅 {new Date(question.createdAt).toLocaleDateString()}
-                    </span>
-                    {question.usageCount > 0 && (
-                      <span className="usage-count">
-                        📊 Used {question.usageCount} times
+                    </td>
+                    <td className="difficulty-col">
+                      <span className={`difficulty-badge ${question.difficulty}`}>
+                        <span className="badge-icon">
+                          {question.difficulty === 'easy' ? '🟢' : 
+                           question.difficulty === 'beginner' ? '🌱' : 
+                           question.difficulty === 'medium' ? '�' :
+                           question.difficulty === 'advanced' ? '🎯' : '🏆'}
+                        </span>
+                        {question.difficulty}
                       </span>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+                    </td>
+                    <td className="source-col">
+                      {question.generatedByAI ? (
+                        <span className="ai-badge">
+                          <span className="badge-icon">🤖</span>
+                          AI Generated
+                        </span>
+                      ) : (
+                        <span className="manual-badge">
+                          <span className="badge-icon">✍️</span>
+                          Manual
+                        </span>
+                      )}
+                    </td>
+                    <td className="actions-col">
+                      <div className="action-buttons">
+                        <motion.button 
+                          className="action-btn view-btn"
+                          onClick={() => handlePreviewQuestion(question)}
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          title="View Details"
+                        >
+                          👁️
+                        </motion.button>
+                        <motion.button 
+                          className="action-btn edit-btn"
+                          onClick={() => handleEditQuestion(question)}
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          title="Edit Question"
+                        >
+                          ✏️
+                        </motion.button>
+                        <motion.button 
+                          className="action-btn delete-btn"
+                          onClick={() => handleDeleteQuestion(question._id)}
+                          whileHover={{ scale: 1.1, rotate: 5 }}
+                          whileTap={{ scale: 0.9 }}
+                          title="Delete Question"
+                        >
+                          🗑️
+                        </motion.button>
+                      </div>
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </motion.div>
+      </>
+      )}
     </motion.div>
   );
+
+  const renderTests = () => {
+    if (showTestCreation) {
+      return (
+        <TestCreation 
+          user={user}
+          onBack={handleBackToTests}
+          onTestCreated={handleTestCreated}
+        />
+      );
+    }
+    
+    return (
+      <TestManagement 
+        user={user}
+        onCreateTest={handleCreateTest}
+      />
+    );
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -869,6 +955,8 @@ const TeacherDashboard = ({ user, onLogout }) => {
         return renderOverview();
       case 'questions':
         return renderQuestions();
+      case 'tests':
+        return renderTests();
       default:
         return renderOverview();
     }
@@ -941,7 +1029,8 @@ const TeacherDashboard = ({ user, onLogout }) => {
       >
         {[
           { id: 'overview', label: 'Dashboard Overview', icon: '📊', desc: 'Your teaching hub' },
-          { id: 'questions', label: 'Question Bank', icon: '📚', desc: 'Manage questions' }
+          { id: 'questions', label: 'Question Bank', icon: '📚', desc: 'Manage questions' },
+          { id: 'tests', label: 'Test Management', icon: '📋', desc: 'Create & schedule tests' }
         ].map((tab, index) => (
           <motion.button
             key={tab.id}

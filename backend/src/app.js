@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -30,9 +30,11 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 const authRoutes = require('./routes/auth');
 const questionRoutes = require('./routes/questions');
+const testRoutes = require('./routes/tests');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/questions', questionRoutes);
+app.use('/api/tests', testRoutes);
 
 // Database connection
 mongoose.connect(MONGODB_URI, {

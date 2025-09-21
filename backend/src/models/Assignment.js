@@ -15,10 +15,26 @@ const assignmentSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
-  questionIds: [{
+  type: {
+    type: String,
+    enum: ['test', 'homework', 'quiz', 'practice'],
+    default: 'test'
+  },
+  // Regular questions (students must answer all 10)
+  regularQuestions: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Question',
     required: true
+  }],
+  // Challenge questions (for student challenges, 5 questions)
+  challengeQuestions: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Question'
+  }],
+  // Legacy field for backward compatibility
+  questionIds: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Question'
   }],
   studentIds: [{
     type: mongoose.Schema.Types.ObjectId,
@@ -27,16 +43,30 @@ const assignmentSchema = new mongoose.Schema({
   grade: {
     type: String,
     required: true,
-    enum: ['K', '1', '2', '3', '4', '5', '6', '7', '8']
+    enum: ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
   },
   subject: {
     type: String,
     required: true,
-    enum: ['Math', 'Science', 'English', 'History', 'Art', 'Music', 'PE']
+    enum: ['Math', 'Science', 'English', 'History', 'Geography', 'Art', 'Music', 'PE']
   },
-  dueDate: {
+  // Scheduling information
+  scheduledDate: {
     type: Date,
     required: true
+  },
+  startTime: {
+    type: String, // HH:MM format
+    required: true
+  },
+  duration: {
+    type: Number, // in minutes
+    required: true,
+    default: 60
+  },
+  // Legacy field
+  dueDate: {
+    type: Date
   },
   timeLimit: {
     type: Number, // in minutes
@@ -44,8 +74,26 @@ const assignmentSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['draft', 'published', 'completed', 'archived'],
+    enum: ['draft', 'scheduled', 'active', 'completed', 'archived'],
     default: 'draft'
+  },
+  settings: {
+    allowChallenges: {
+      type: Boolean,
+      default: true
+    },
+    shuffleQuestions: {
+      type: Boolean,
+      default: true
+    },
+    showResults: {
+      type: Boolean,
+      default: true
+    },
+    passingScore: {
+      type: Number,
+      default: 70 // percentage
+    }
   },
   difficulty: {
     type: String,
