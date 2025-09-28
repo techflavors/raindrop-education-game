@@ -1,738 +1,687 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
+
+// Add CSS animation for the success icon
+const pulseAnimation = `
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    }
+    70% {
+      transform: scale(1.05);
+      box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+    }
+    100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+  }
+`;
+
+// Inject the CSS
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement('style');
+  styleSheet.textContent = pulseAnimation;
+  document.head.appendChild(styleSheet);
+}
 
 const TestCreation = ({ user, onBack, onTestCreated }) => {
+  // Use assigned grades and subjects from user profile
+  const assignedGrades = user?.profile?.assignedGrades || [];
+  const assignedSubjects = user?.profile?.subjects || [];
+
+  // Helper function to get default due date (5 days from today)
+  const getDefaultDueDate = () => {
+    const fiveDaysFromNow = new Date();
+    fiveDaysFromNow.setDate(fiveDaysFromNow.getDate() + 5);
+    return fiveDaysFromNow.toISOString().split('T')[0];
+  };
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    type: 'regular', // Use 'regular' as the backend expects this enum value
     grade: '',
     subject: '',
-    regularQuestionCount: 10,
-    challengeQuestionCount: 5,
-    scheduledDate: '',
-    startTime: '',
-    duration: 60,
-    settings: {
-      shuffleQuestions: true,
-      showResults: true,
-      passingScore: 70
-    }
+    assignedStudents: [], // Will be auto-populated with all students in grade
+    timeLimit: 30,
+    dueDate: getDefaultDueDate(), // Set default due date to 5 days from now
+    instructions: '',
+    passingScore: 70,
+    regularQuestions: 5, // Number of regular difficulty questions
+    advancedQuestions: 5  // Number of advanced difficulty questions
   });
 
-  const [regularQuestions, setRegularQuestions] = useState([]);
-  const [challengeQuestions, setChallengeQuestions] = useState([]);
-  const [selectedRegular, setSelectedRegular] = useState([]);
-  const [selectedChallenge, setSelectedChallenge] = useState([]);
-  const [students, setStudents] = useState([]);
-  const [selectedStudents, setSelectedStudents] = useState([]);
+  const [questionPreview, setQuestionPreview] = useState(null);
+  const [availableStudents, setAvailableStudents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [step, setStep] = useState(1);
+  const [success, setSuccess] = useState('');
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [createdTest, setCreatedTest] = useState(null);
 
-  // Get teacher's assigned grades and subjects
-  const teacherGrades = user?.profile?.assignedGrades || [];
-  const teacherSubjects = user?.profile?.subjects || [];
-  
-  // Use teacher's assigned grades and subjects instead of all options
-  const grades = teacherGrades.length > 0 ? teacherGrades : [];
-  const subjects = teacherSubjects.length > 0 ? teacherSubjects : [];
+  const fetchQuestionPreview = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:3000/api/tests/questions/preview', {
+        params: {
+          grade: formData.grade,
+          subject: formData.subject,
+          type: formData.type,
+          regularQuestions: formData.regularQuestions,
+          advancedQuestions: formData.advancedQuestions
+        },
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
 
-  // Fetch questions when grade and subject change
+      if (response.data.success) {
+        setQuestionPreview(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching question preview:', error);
+      setError('Failed to load question preview');
+    }
+  }, [formData.grade, formData.subject, formData.type, formData.regularQuestions, formData.advancedQuestions]);
+
+  const fetchStudents = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`http://localhost:3000/api/tests/students/${formData.grade}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (response.data.success) {
+        const students = response.data.students;
+        setAvailableStudents(students);
+        
+        // Automatically assign ALL students in the grade
+        const allStudentIds = students.map(student => student._id);
+        setFormData(prev => ({
+          ...prev,
+          assignedStudents: allStudentIds
+        }));
+        
+        console.log(`Auto-assigned ${allStudentIds.length} students to test for Grade ${formData.grade}`);
+      }
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      setError('Failed to load students');
+    }
+  }, [formData.grade]);
+
+  // Fetch question preview when grade/subject/type/question counts change
   useEffect(() => {
     if (formData.grade && formData.subject) {
-      fetchQuestions();
+      fetchQuestionPreview();
     }
-  }, [formData.grade, formData.subject]);
+  }, [formData.grade, formData.subject, formData.type, formData.regularQuestions, formData.advancedQuestions, fetchQuestionPreview]);
 
   // Fetch students when grade changes
   useEffect(() => {
     if (formData.grade) {
       fetchStudents();
     }
-  }, [formData.grade]);
+  }, [formData.grade, fetchStudents]);
 
-  const fetchQuestions = async () => {
-    if (!formData.grade || !formData.subject) {
-      console.log('Grade or subject not set:', { grade: formData.grade, subject: formData.subject });
-      return;
+  // Initialize form data when user assignments are available
+  useEffect(() => {
+    if (assignedGrades.length > 0 && assignedSubjects.length > 0 && !formData.grade) {
+      setFormData(prev => ({
+        ...prev,
+        grade: assignedGrades[0],
+        subject: assignedSubjects[0]
+      }));
     }
+  }, [assignedGrades, assignedSubjects, formData.grade]);
 
-    try {
-      setLoading(true);
-      setError('');
-      
-      console.log('Fetching questions for:', { grade: formData.grade, subject: formData.subject });
-      
-      const token = localStorage.getItem('token');
-      console.log('Token exists:', !!token);
-      
-      const response = await fetch(
-        `/api/tests/questions/${formData.grade}/${formData.subject}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-
-      console.log('Response status:', response.status);
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('=== FRONTEND: Questions data received ===');
-        console.log('Full API response:', data);
-        console.log('Regular questions count:', data.regularQuestions?.length);
-        console.log('Challenge questions count:', data.challengeQuestions?.length);
-        
-        if (data.regularQuestions?.length > 0) {
-          console.log('Sample regular question:', data.regularQuestions[0]);
-          console.log('Regular question text:', data.regularQuestions[0].questionText);
-        }
-        
-        if (data.challengeQuestions?.length > 0) {
-          console.log('Sample challenge question:', data.challengeQuestions[0]);
-          console.log('Challenge question text:', data.challengeQuestions[0].questionText);
-        }
-        
-        setRegularQuestions(data.regularQuestions || []);
-        setChallengeQuestions(data.challengeQuestions || []);
-        setSelectedRegular([]);
-        setSelectedChallenge([]);
-        console.log('=== FRONTEND: State updated ===');
-      } else {
-        const errorText = await response.text();
-        console.error('API Error:', errorText);
-        setError('Failed to fetch questions');
-      }
-    } catch (error) {
-      setError('Error fetching questions');
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchStudents = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/tests/students/${formData.grade}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setStudents(data.students);
-      }
-    } catch (error) {
-      console.error('Error fetching students:', error);
-    }
-  };
-
-  const handleQuestionSelect = (questionId, type) => {
-    if (type === 'regular') {
-      setSelectedRegular(prev => {
-        if (prev.includes(questionId)) {
-          return prev.filter(id => id !== questionId);
-        } else if (prev.length < 10) {
-          return [...prev, questionId];
-        }
-        return prev;
-      });
-    } else {
-      setSelectedChallenge(prev => {
-        if (prev.includes(questionId)) {
-          return prev.filter(id => id !== questionId);
-        } else if (prev.length < 5) {
-          return [...prev, questionId];
-        }
-        return prev;
-      });
-    }
-  };
-
-  const handleStudentSelect = (studentId) => {
-    setSelectedStudents(prev => {
-      if (prev.includes(studentId)) {
-        return prev.filter(id => id !== studentId);
-      } else {
-        return [...prev, studentId];
-      }
-    });
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (selectedRegular.length !== 10) {
-      setError('Please select exactly 10 regular questions');
-      return;
-    }
-    
-    if (selectedChallenge.length !== 5) {
-      setError('Please select exactly 5 challenge questions');
-      return;
-    }
+    setLoading(true);
+    setError('');
+    setSuccess('');
 
     try {
-      setLoading(true);
+      // Validate form
+      if (!formData.title || !formData.grade || !formData.subject || !formData.dueDate) {
+        throw new Error('Please fill in all required fields');
+      }
+
+      if (formData.assignedStudents.length === 0) {
+        throw new Error('Please select at least one student');
+      }
+
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/tests', {
-        method: 'POST',
+      const response = await axios.post('http://localhost:3000/api/tests/create', formData, {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          ...formData,
-          regularQuestions: selectedRegular,
-          challengeQuestions: selectedChallenge,
-          studentIds: selectedStudents
-        })
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        onTestCreated(data.test);
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Failed to create test');
+      if (response.data.success) {
+        // Store the created test data for the confirmation modal
+        setCreatedTest({
+          ...response.data.test,
+          questionDistribution: response.data.questionDistribution
+        });
+        
+        // Show confirmation modal
+        setShowConfirmation(true);
+        
+        // Reset form
+        setFormData({
+          title: '',
+          description: '',
+          type: 'regular',
+          grade: '',
+          subject: '',
+          assignedStudents: [],
+          timeLimit: 30,
+          dueDate: getDefaultDueDate(),
+          instructions: '',
+          passingScore: 70,
+          regularQuestions: 5,
+          advancedQuestions: 5
+        });
+        
+        setQuestionPreview(null);
+        setAvailableStudents([]);
       }
     } catch (error) {
-      setError('Error creating test');
-      console.error('Error:', error);
+      console.error('Error creating test:', error);
+      setError(error.response?.data?.message || error.message || 'Failed to create test');
     } finally {
       setLoading(false);
     }
   };
 
-  const getTomorrowDate = () => {
+  const getMinDate = () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     return tomorrow.toISOString().split('T')[0];
   };
 
-  const renderStepIndicator = () => (
-    <div className="step-indicator">
-      {[1, 2, 3, 4, 5].map(stepNum => (
-        <div 
-          key={stepNum}
-          className={`step ${step >= stepNum ? 'active' : ''} ${step > stepNum ? 'completed' : ''}`}
-        >
-          <div className="step-number">{stepNum}</div>
-          <div className="step-label">
-            {stepNum === 1 ? 'Basic Info' : 
-             stepNum === 2 ? 'Question Counts' :
-             stepNum === 3 ? 'Regular Questions' :
-             stepNum === 4 ? 'Challenge Questions' : 'Schedule & Assign'}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-
-  const renderBasicInfo = () => (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      className="step-content"
-    >
-      <h3>📋 Test Basic Information</h3>
-      <div className="form-grid">
-        <div className="form-group">
-          <label>Test Title *</label>
-          <input
-            type="text"
-            value={formData.title}
-            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-            placeholder="e.g., Chapter 5 Math Test"
-            required
-          />
-        </div>
-        
-        <div className="form-group">
-          <label>Description</label>
-          <textarea
-            value={formData.description}
-            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-            placeholder="Optional description about the test..."
-            rows="3"
-          />
-        </div>
-        
-        <div className="form-row">
-          <div className="form-group">
-            <label>Grade *</label>
-            <select
-              value={formData.grade}
-              onChange={(e) => setFormData(prev => ({ ...prev, grade: e.target.value }))}
-              required
-            >
-              <option value="">Select Grade</option>
-              {grades.map(grade => (
-                <option key={grade} value={grade}>Grade {grade}</option>
-              ))}
-            </select>
-          </div>
-          
-          <div className="form-group">
-            <label>Subject *</label>
-            <select
-              value={formData.subject}
-              onChange={(e) => setFormData(prev => ({ ...prev, subject: e.target.value }))}
-              required
-            >
-              <option value="">Select Subject</option>
-              {subjects.map(subject => (
-                <option key={subject} value={subject}>{subject}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-
-  const renderQuestionCounts = () => (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      className="step-content"
-    >
-      <div className="step-header">
-        <h3>📊 Question Configuration</h3>
-        <p>Set the number of questions for your test</p>
-      </div>
-      
-      <div className="question-counts-form">
-        <div className="count-section">
-          <div className="form-group">
-            <label>Regular Questions *</label>
-            <select
-              value={formData.regularQuestionCount}
-              onChange={(e) => setFormData(prev => ({ ...prev, regularQuestionCount: parseInt(e.target.value) }))}
-              required
-            >
-              {[5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(count => (
-                <option key={count} value={count}>{count} questions</option>
-              ))}
-            </select>
-            <small>Questions that all students must answer</small>
-          </div>
-          
-          <div className="form-group">
-            <label>Challenge Questions *</label>
-            <select
-              value={formData.challengeQuestionCount}
-              onChange={(e) => setFormData(prev => ({ ...prev, challengeQuestionCount: parseInt(e.target.value) }))}
-              required
-            >
-              {[3, 4, 5, 6, 7, 8, 9, 10].map(count => (
-                <option key={count} value={count}>{count} questions</option>
-              ))}
-            </select>
-            <small>Expert-level questions for challenging students</small>
-          </div>
-        </div>
-        
-        <div className="total-summary">
-          <div className="summary-card">
-            <h4>📋 Test Summary</h4>
-            <div className="summary-details">
-              <div className="summary-item">
-                <span className="label">Regular Questions:</span>
-                <span className="value">{formData.regularQuestionCount}</span>
-              </div>
-              <div className="summary-item">
-                <span className="label">Challenge Questions:</span>
-                <span className="value">{formData.challengeQuestionCount}</span>
-              </div>
-              <div className="summary-item total">
-                <span className="label">Total Questions:</span>
-                <span className="value">{formData.regularQuestionCount + formData.challengeQuestionCount}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-
-  const renderQuestionSelection = (type) => {
-    const questions = type === 'regular' ? regularQuestions : challengeQuestions;
-    const selected = type === 'regular' ? selectedRegular : selectedChallenge;
-    const maxSelection = type === 'regular' ? formData.regularQuestionCount : formData.challengeQuestionCount;
-    const title = type === 'regular' ? 'Regular Questions' : 'Challenge Questions';
-    const description = type === 'regular' 
-      ? `Select ${formData.regularQuestionCount} questions that all students must answer`
-      : `Select ${formData.challengeQuestionCount} expert-level questions for student challenges`;
-
+  // Show loading if user assignments are not available
+  if (!user || !user.profile || assignedGrades.length === 0 || assignedSubjects.length === 0) {
     return (
-      <motion.div
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        className="step-content"
-      >
-        <div className="step-header">
-          <h3>📝 {title}</h3>
-          <p>{description}</p>
-          <div className="selection-status">
-            <span className={`status ${selected.length === maxSelection ? 'complete' : 'incomplete'}`}>
-              {selected.length} / {maxSelection} selected
-            </span>
-            <div className="progress-bar">
-              <div 
-                className="progress-fill" 
-                style={{ width: `${(selected.length / maxSelection) * 100}%` }}
-              ></div>
-            </div>
+      <div className="test-creation-container">
+        <div className="test-creation-header">
+          <button onClick={onBack} className="back-button">← Back to Dashboard</button>
+          <h2>🎯 Create New Test</h2>
+        </div>
+        <div className="loading-assignments">
+          <div className="loading-spinner"></div>
+          <p>Loading your assigned grades and subjects...</p>
+          {assignedGrades.length === 0 && <p style={{color: '#e74c3c'}}>⚠️ No grades assigned to your profile</p>}
+          {assignedSubjects.length === 0 && <p style={{color: '#e74c3c'}}>⚠️ No subjects assigned to your profile</p>}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="test-creation-container">
+      <div className="test-creation-header">
+        <button onClick={onBack} className="back-button">← Back to Dashboard</button>
+        <h2>🎯 Create New Test</h2>
+      </div>
+
+      {error && (
+        <div className="error-message">
+          <span className="error-icon">⚠️</span>
+          {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="success-message">
+          <span className="success-icon">✅</span>
+          {success}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="test-creation-form">
+        {/* Basic Test Information */}
+        <div className="form-section">
+          <h3>📝 Test Information</h3>
+          
+          <div className="form-group">
+            <label htmlFor="title">Test Title *</label>
+            <input
+              type="text"
+              id="title"
+              name="title"
+              value={formData.title}
+              onChange={handleInputChange}
+              placeholder="e.g., Grade 5 Math Assessment"
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="description">Description</label>
+            <textarea
+              id="description"
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              placeholder="Brief description of the test..."
+              rows="3"
+            />
           </div>
         </div>
 
-        {questions.length === 0 ? (
-          <div className="no-questions">
-            <p>⚠️ No questions available for {formData.grade} Grade {formData.subject}</p>
-            <p>Please go back and select a different grade/subject or create some questions first.</p>
-          </div>
-        ) : (
-          <div className="questions-list-view">
-            <div className="questions-list-header">
-              <div className="header-item select">Select</div>
-              <div className="header-item question">Question</div>
-              <div className="header-item difficulty">Difficulty</div>
-              <div className="header-item answers">Answers</div>
-            </div>
-            
-            <div className="questions-list-body">
-              {questions.map((question, index) => {
-                console.log(`Rendering question ${index}:`, {
-                  id: question._id,
-                  text: question.questionText,
-                  difficulty: question.difficulty,
-                  answersCount: question.answers?.length
-                });
-                return (
-                <motion.div
-                  key={question._id}
-                  className={`question-list-item ${selected.includes(question._id) ? 'selected' : ''}`}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.02 }}
-                >
-                  <div className="list-item-content">
-                    <div className="select-column">
-                      <label className="custom-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={selected.includes(question._id)}
-                          onChange={() => handleQuestionSelect(question._id, type)}
-                          disabled={!selected.includes(question._id) && selected.length >= maxSelection}
-                        />
-                        <span className="checkmark"></span>
-                      </label>
-                    </div>
-                    
-                    <div className="question-column">
-                      <div className="question-text">
-                        {question.questionText || '[No question text]'}
-                      </div>
-                      {question.answers && question.answers.length > 0 && (
-                        <div className="answer-preview">
-                          <div className="correct-answer">
-                            ✓ {question.answers.find(a => a.isCorrect)?.text || 'No correct answer set'}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="difficulty-column">
-                      <span className={`difficulty-badge ${question.difficulty}`}>
-                        {question.difficulty}
-                      </span>
-                    </div>
-                    
-                    <div className="answers-column">
-                      <span className="answer-count">
-                        {question.answers?.length || 0} options
-                      </span>
-                    </div>
-                  </div>
-                </motion.div>
-                );
-              })}
-            </div>
-            
-            {selected.length > 0 && (
-              <div className="selection-summary">
-                <h4>Selected Questions ({selected.length}/{maxSelection})</h4>
-                <div className="selected-list">
-                  {selected.map((questionId, index) => {
-                    const question = questions.find(q => q._id === questionId);
-                    return question ? (
-                      <div key={questionId} className="selected-item">
-                        <span className="item-number">{index + 1}.</span>
-                        <span className="item-text">
-                          {question.questionText.length > 60 
-                            ? `${question.questionText.substring(0, 60)}...` 
-                            : question.questionText}
-                        </span>
-                        <button
-                          className="remove-btn"
-                          onClick={() => handleQuestionSelect(questionId, type)}
-                          title="Remove from selection"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ) : null;
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </motion.div>
-    );
-  };
-
-  const renderScheduleAndAssign = () => (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      className="step-content"
-    >
-      <h3>📅 Schedule & Assign Test</h3>
-      
-      <div className="form-grid">
-        <div className="schedule-section">
-          <h4>⏰ Test Schedule</h4>
+        {/* Grade and Subject */}
+        <div className="form-section">
+          <h3>🎓 Grade & Subject</h3>
+          
           <div className="form-row">
             <div className="form-group">
-              <label>Date *</label>
-              <input
-                type="date"
-                value={formData.scheduledDate}
-                onChange={(e) => setFormData(prev => ({ ...prev, scheduledDate: e.target.value }))}
-                min={getTomorrowDate()}
+              <label htmlFor="grade">Grade *</label>
+              <select
+                id="grade"
+                name="grade"
+                value={formData.grade || assignedGrades[0] || ''}
+                onChange={handleInputChange}
                 required
-              />
+              >
+                {assignedGrades.length === 0 ? (
+                  <option value="">No grades assigned</option>
+                ) : (
+                  assignedGrades.map(grade => (
+                    <option key={grade} value={grade}>Grade {grade}</option>
+                  ))
+                )}
+              </select>
             </div>
-            
+
             <div className="form-group">
-              <label>Start Time *</label>
-              <input
-                type="time"
-                value={formData.startTime}
-                onChange={(e) => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
+              <label htmlFor="subject">Subject *</label>
+              <select
+                id="subject"
+                name="subject"
+                value={formData.subject || assignedSubjects[0] || ''}
+                onChange={handleInputChange}
                 required
-              />
-            </div>
-            
-            <div className="form-group">
-              <label>Duration (minutes) *</label>
-              <input
-                type="number"
-                value={formData.duration}
-                onChange={(e) => setFormData(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
-                min="30"
-                max="180"
-                step="15"
-                required
-              />
+              >
+                {assignedSubjects.length === 0 ? (
+                  <option value="">No subjects assigned</option>
+                ) : (
+                  assignedSubjects.map(subject => (
+                    <option key={subject} value={subject}>{subject}</option>
+                  ))
+                )}
+              </select>
             </div>
           </div>
+
+
         </div>
 
-        <div className="settings-section">
-          <h4>⚙️ Test Settings</h4>
-          <div className="settings-grid">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={formData.settings.shuffleQuestions}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  settings: { ...prev.settings, shuffleQuestions: e.target.checked }
-                }))}
-              />
-              <span className="checkmark"></span>
-              Shuffle Questions
-            </label>
-            
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={formData.settings.showResults}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  settings: { ...prev.settings, showResults: e.target.checked }
-                }))}
-              />
-              <span className="checkmark"></span>
-              Show Results to Students
-            </label>
-            
+
+
+        {/* Test Settings with Question Configuration */}
+        <div className="form-section">
+          <h3>⚙️ Test Settings</h3>
+          
+          {/* Question Configuration - Side by Side */}
+          <div className="form-row">
             <div className="form-group">
-              <label>Passing Score (%)</label>
+              <label htmlFor="regularQuestions">📖 Regular Questions</label>
               <input
                 type="number"
-                value={formData.settings.passingScore}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  settings: { ...prev.settings, passingScore: parseInt(e.target.value) }
-                }))}
+                id="regularQuestions"
+                name="regularQuestions"
+                value={formData.regularQuestions}
+                onChange={handleInputChange}
+                min="1"
+                max="20"
+              />
+              <small>Basic to intermediate difficulty</small>
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="advancedQuestions">⚡ Advanced Questions</label>
+              <input
+                type="number"
+                id="advancedQuestions"
+                name="advancedQuestions"
+                value={formData.advancedQuestions}
+                onChange={handleInputChange}
+                min="1"
+                max="20"
+              />
+              <small>High difficulty questions</small>
+            </div>
+          </div>
+          
+          <div className="total-questions-display" style={{ textAlign: 'center', margin: '1rem 0', padding: '0.5rem', background: '#f8f9fa', borderRadius: '4px' }}>
+            <strong>Total Questions: {parseInt(formData.regularQuestions) + parseInt(formData.advancedQuestions)}</strong>
+          </div>
+          
+          <div className="form-row" style={{ marginTop: '1.5rem' }}>
+            <div className="form-group">
+              <label htmlFor="timeLimit">Time Limit (minutes) *</label>
+              <input
+                type="number"
+                id="timeLimit"
+                name="timeLimit"
+                value={formData.timeLimit}
+                onChange={handleInputChange}
+                min="10"
+                max="120"
+                required
+              />
+              <small>Enter the time limit for students to complete the test</small>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="passingScore">Passing Score (%)</label>
+              <input
+                type="number"
+                id="passingScore"
+                name="passingScore"
+                value={formData.passingScore}
+                onChange={handleInputChange}
                 min="0"
                 max="100"
               />
             </div>
           </div>
-        </div>
 
-        <div className="students-section">
-          <h4>👥 Assign to Students</h4>
-          <div className="students-selection">
-            {students.length === 0 ? (
-              <p>No students found for Grade {formData.grade}</p>
-            ) : (
-              <div className="students-grid">
-                {students.map(student => (
-                  <motion.div
-                    key={student._id}
-                    className={`student-card ${selectedStudents.includes(student._id) ? 'selected' : ''}`}
-                    onClick={() => handleStudentSelect(student._id)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <div className="student-avatar">
-                      {student.profile.firstName?.[0]}{student.profile.lastName?.[0]}
-                    </div>
-                    <div className="student-info">
-                      <div className="student-name">
-                        {student.profile.firstName} {student.profile.lastName}
-                      </div>
-                      <div className="student-username">@{student.username}</div>
-                    </div>
-                    <div className="selection-indicator">
-                      {selectedStudents.includes(student._id) ? '✓' : '○'}
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
+          <div className="form-group">
+            <label htmlFor="dueDate">Due Date *</label>
+            <input
+              type="date"
+              id="dueDate"
+              name="dueDate"
+              value={formData.dueDate}
+              onChange={handleInputChange}
+              min={getMinDate()}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="instructions">Instructions for Students</label>
+            <textarea
+              id="instructions"
+              name="instructions"
+              value={formData.instructions}
+              onChange={handleInputChange}
+              placeholder="Special instructions for students taking this test..."
+              rows="3"
+            />
           </div>
         </div>
-      </div>
-    </motion.div>
-  );
 
-  return (
-    <div className="test-creation">
-      <div className="test-creation-header">
-        <button className="back-btn" onClick={onBack}>
-          ← Back to Tests
-        </button>
-        <h2>Create New Test</h2>
-      </div>
-
-      {/* Check if teacher has assignments */}
-      {(grades.length === 0 || subjects.length === 0) ? (
-        <motion.div 
-          className="warning-message"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{
-            background: '#fff3cd',
-            border: '1px solid #ffeeba',
-            color: '#856404',
-            padding: '2rem',
-            borderRadius: '12px',
-            margin: '2rem 0',
-            textAlign: 'center'
-          }}
-        >
-          <h3>⚠️ No Grade or Subject Assignments</h3>
-          <p>You need to have grades and subjects assigned by an administrator before you can create tests.</p>
-          <p><strong>Currently assigned:</strong></p>
-          <p>Grades: {grades.length > 0 ? grades.join(', ') : 'None'}</p>
-          <p>Subjects: {subjects.length > 0 ? subjects.join(', ') : 'None'}</p>
-          <br />
-          <small>Please contact your administrator to assign you to specific grades and subjects.</small>
-        </motion.div>
-      ) : (
-        <>
-          {renderStepIndicator()}
-
-      <form onSubmit={handleSubmit} className="test-creation-form">
-        <AnimatePresence mode="wait">
-          {step === 1 && renderBasicInfo()}
-          {step === 2 && renderQuestionCounts()}
-          {step === 3 && renderQuestionSelection('regular')}
-          {step === 4 && renderQuestionSelection('challenge')}
-          {step === 5 && renderScheduleAndAssign()}
-        </AnimatePresence>
-
-        {error && (
-          <motion.div 
-            className="error-message"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            {error}
-          </motion.div>
-        )}
-
+        {/* Submit Button */}
         <div className="form-actions">
-          {step > 1 && (
-            <button 
-              type="button" 
-              className="btn-secondary"
-              onClick={() => setStep(prev => prev - 1)}
-            >
-              Previous
-            </button>
-          )}
           
-          {step < 5 ? (
-            <button 
-              type="button" 
-              className="btn-primary"
-              onClick={() => {
-                if (step === 1 && (!formData.title || !formData.grade || !formData.subject)) {
-                  setError('Please fill in all required fields');
-                  return;
-                }
-                if (step === 2 && (!formData.regularQuestionCount || !formData.challengeQuestionCount)) {
-                  setError('Please specify question counts');
-                  return;
-                }
-                if (step === 3 && selectedRegular.length !== formData.regularQuestionCount) {
-                  setError(`Please select exactly ${formData.regularQuestionCount} regular questions`);
-                  return;
-                }
-                if (step === 4 && selectedChallenge.length !== formData.challengeQuestionCount) {
-                  setError(`Please select exactly ${formData.challengeQuestionCount} challenge questions`);
-                  return;
-                }
-                setError('');
-                setStep(prev => prev + 1);
-              }}
-              disabled={loading}
-            >
-              Next
-            </button>
-          ) : (
-            <button 
-              type="submit" 
-              className="btn-primary"
-              disabled={loading || !formData.scheduledDate || !formData.startTime}
-            >
-              {loading ? 'Creating Test...' : 'Create Test'}
-            </button>
+          <button
+            type="submit"
+            className="create-test-btn"
+            disabled={loading || !questionPreview?.canCreateTest || formData.assignedStudents.length === 0}
+            style={{
+              opacity: (loading || !questionPreview?.canCreateTest || formData.assignedStudents.length === 0) ? 0.5 : 1,
+              cursor: (loading || !questionPreview?.canCreateTest || formData.assignedStudents.length === 0) ? 'not-allowed' : 'pointer',
+              background: (loading || !questionPreview?.canCreateTest || formData.assignedStudents.length === 0) ? '#ccc' : '#4CAF50',
+              color: 'white',
+              border: 'none',
+              padding: '12px 24px',
+              borderRadius: '6px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              zIndex: 1000,
+              position: 'relative'
+            }}
+            onClick={(e) => {
+              console.log('🎯 CREATE TEST BUTTON CLICKED!');
+              console.log('Button disabled?', loading || !questionPreview?.canCreateTest || formData.assignedStudents.length === 0);
+              console.log('Loading:', loading);
+              console.log('Question Preview:', questionPreview);
+              console.log('Can Create Test:', questionPreview?.canCreateTest);
+              console.log('Assigned Students:', formData.assignedStudents.length);
+              console.log('Form Data:', formData);
+              
+              // If disabled, prevent default and show alert
+              if (loading || !questionPreview?.canCreateTest || formData.assignedStudents.length === 0) {
+                e.preventDefault();
+                alert('Button is disabled. Check the debug info below the button.');
+                return;
+              }
+            }}
+          >
+            {loading ? (
+              <span>🔄 Creating Test...</span>
+            ) : (
+              <span>📚 Create Test</span>
+            )}
+          </button>
+          
+          {/* Additional debug info */}
+          {(loading || !questionPreview?.canCreateTest || formData.assignedStudents.length === 0) && (
+            <div className="button-disabled-reasons" style={{ marginTop: '10px', fontSize: '12px', color: '#e74c3c' }}>
+              <strong>Button disabled because:</strong>
+              {loading && <div>• Test is being created</div>}
+              {!questionPreview?.canCreateTest && <div>• Not enough questions available for this grade/subject</div>}
+              {formData.assignedStudents.length === 0 && <div>• No students assigned</div>}
+            </div>
           )}
         </div>
       </form>
-      </>
+
+      {/* Confirmation Modal */}
+      {showConfirmation && createdTest && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '20px',
+            padding: '40px',
+            maxWidth: '600px',
+            width: '90%',
+            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.3)',
+            textAlign: 'center',
+            position: 'relative'
+          }}>
+            {/* Success Icon */}
+            <div style={{
+              width: '80px',
+              height: '80px',
+              borderRadius: '50%',
+              backgroundColor: '#10b981',
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '36px',
+              margin: '0 auto 24px auto',
+              animation: 'pulse 2s infinite'
+            }}>
+              ✅
+            </div>
+
+            {/* Title */}
+            <h2 style={{
+              fontSize: '28px',
+              fontWeight: '700',
+              color: '#1f2937',
+              margin: '0 0 16px 0'
+            }}>
+              Test Created Successfully! 🎉
+            </h2>
+
+            {/* Test Details */}
+            <div style={{
+              backgroundColor: '#f8fafc',
+              borderRadius: '12px',
+              padding: '24px',
+              margin: '24px 0',
+              textAlign: 'left'
+            }}>
+              <h3 style={{
+                fontSize: '20px',
+                fontWeight: '600',
+                color: '#1f2937',
+                margin: '0 0 16px 0',
+                textAlign: 'center'
+              }}>
+                📋 {createdTest.title}
+              </h3>
+              
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '16px',
+                marginBottom: '16px'
+              }}>
+                <div>
+                  <div style={{ fontSize: '14px', color: '#6b7280', fontWeight: '500' }}>Subject & Grade</div>
+                  <div style={{ fontSize: '16px', fontWeight: '600', color: '#1f2937' }}>
+                    {createdTest.subject} - Grade {createdTest.grade}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '14px', color: '#6b7280', fontWeight: '500' }}>Test Type</div>
+                  <div style={{ fontSize: '16px', fontWeight: '600', color: '#1f2937' }}>
+                    {createdTest.type === 'challenge' ? '⚡ Challenge Test' : '📚 Regular Test'}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '14px', color: '#6b7280', fontWeight: '500' }}>Total Questions</div>
+                  <div style={{ fontSize: '16px', fontWeight: '600', color: '#1f2937' }}>
+                    {createdTest.questions?.length || 0} Questions
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '14px', color: '#6b7280', fontWeight: '500' }}>Students Assigned</div>
+                  <div style={{ fontSize: '16px', fontWeight: '600', color: '#1f2937' }}>
+                    {createdTest.assignedStudents?.length || 0} Students
+                  </div>
+                </div>
+              </div>
+
+              {/* Question Distribution */}
+              {createdTest.questionDistribution && (
+                <div style={{
+                  backgroundColor: 'white',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  border: '1px solid #e5e7eb'
+                }}>
+                  <div style={{ fontSize: '14px', color: '#6b7280', fontWeight: '500', marginBottom: '8px' }}>
+                    Question Distribution:
+                  </div>
+                  <div style={{ fontSize: '14px', color: '#374151' }}>
+                    📚 Regular: {createdTest.questionDistribution.regular || 0} questions • 
+                    ⚡ Advanced: {createdTest.questionDistribution.advanced || 0} questions
+                  </div>
+                </div>
+              )}
+
+              {/* Due Date */}
+              <div style={{ marginTop: '16px' }}>
+                <div style={{ fontSize: '14px', color: '#6b7280', fontWeight: '500' }}>Due Date</div>
+                <div style={{ fontSize: '16px', fontWeight: '600', color: '#1f2937' }}>
+                  {new Date(createdTest.dueDate).toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{
+              display: 'flex',
+              gap: '16px',
+              justifyContent: 'center',
+              marginTop: '32px'
+            }}>
+              <button
+                onClick={() => {
+                  setShowConfirmation(false);
+                  if (onTestCreated) {
+                    onTestCreated(createdTest);
+                  } else if (onBack) {
+                    // Fallback to onBack if onTestCreated is not provided
+                    onBack();
+                  }
+                }}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => e.target.style.backgroundColor = '#2563eb'}
+                onMouseOut={(e) => e.target.style.backgroundColor = '#3b82f6'}
+              >
+                📋 Go to Test Dashboard
+              </button>
+              
+              <button
+                onClick={() => {
+                  setShowConfirmation(false);
+                  // Stay on test creation page for creating another test
+                }}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: '#10b981',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => e.target.style.backgroundColor = '#059669'}
+                onMouseOut={(e) => e.target.style.backgroundColor = '#10b981'}
+              >
+                ➕ Create Another Test
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

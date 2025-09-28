@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import AdminDashboard from './AdminDashboard';
 import TeacherDashboard from './TeacherDashboard';
+import StudentDashboard from './StudentDashboard';
 
 function Dashboard() {
   const [user, setUser] = useState(null);
@@ -86,35 +87,20 @@ function Dashboard() {
     return <TeacherDashboard user={user} onLogout={handleLogout} />;
   }
 
-  // Student dashboard (basic for now)
+  // Student dashboard
+  if (user.role === 'student') {
+    return <StudentDashboard user={user} onLogout={handleLogout} />;
+  }
+
+  // Fallback for unknown roles
   return (
     <motion.div
-      className="student-dashboard"
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5 }}
+      className="loading-screen"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
     >
-      <div className="dashboard-header">
-        <h2>🎮 Student Dashboard</h2>
-        <p>Welcome, {user.profile.firstName}!</p>
-        <button onClick={handleLogout} className="logout-btn">
-          🚪 Logout
-        </button>
-      </div>
-      
-      <div className="student-content">
-        <h3>🚧 Coming Soon!</h3>
-        <p>Student dashboard with raindrops, cups, and game features is under development.</p>
-        
-        <div className="student-info">
-          <div className="info-card">
-            <h4>Your Profile</h4>
-            <p><strong>Name:</strong> {user.profile.firstName} {user.profile.lastName}</p>
-            <p><strong>Grade:</strong> {user.profile.grade || 'Not assigned'}</p>
-            <p><strong>Username:</strong> {user.username}</p>
-          </div>
-        </div>
-      </div>
+      <div className="loading-spinner">🌧️</div>
+      <p>Unknown user role. Please contact administrator.</p>
     </motion.div>
   );
 }

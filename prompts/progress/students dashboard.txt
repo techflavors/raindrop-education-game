@@ -1,0 +1,28 @@
+Students dashboard has two screen
+Screen 1:
+Show all the test assigned to the Students and Students should see the progress of the previous test and can start an active test
+
+Screen 2: when they start the test you should show test attemp screen
+Look and feel: Build like a game interface with rich UI and interactive.
+Color scheme: kids friendly
+Animation: add animations for fun and joy
+Layout:
+4 rows
+Row 1: 
+    rain drops collected, 
+    option to challenge when they complete all regular questions
+    Overall progress with other team members
+Row 2:
+    Question progress
+    Timer
+Row 2:
+    Show Question
+Row 3:
+    Canvas with randrops with answers falling from top to bottom randomly
+    Students should be able to choose or click the drops
+    if answer is correct they should be collected and automatically go to next wuestion
+    if the answer is wrong go to next questions
+Row 4: 
+    option to skip the current question 
+    option to go to previous questions
+    if the user has already answered correctly he can't go to that question

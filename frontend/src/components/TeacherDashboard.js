@@ -7,6 +7,7 @@ import TestCreation from './TestCreation';
 const TeacherDashboard = ({ user, onLogout }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [questions, setQuestions] = useState([]);
+  const [tests, setTests] = useState([]);
   const [filteredQuestions, setFilteredQuestions] = useState([]);
   const [stats, setStats] = useState({});
   const [aiStatus, setAiStatus] = useState({ ollamaRunning: false });
@@ -25,6 +26,11 @@ const TeacherDashboard = ({ user, onLogout }) => {
   
   // Test-related state
   const [showTestCreation, setShowTestCreation] = useState(false);
+  
+  // Student management state
+  const [selectedGrade, setSelectedGrade] = useState('');
+  const [gradeStudents, setGradeStudents] = useState([]);
+  const [loadingStudents, setLoadingStudents] = useState(false);
   
   const [filters, setFilters] = useState({
     grade: '',
@@ -114,13 +120,15 @@ const TeacherDashboard = ({ user, onLogout }) => {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [questionsRes, statsRes, aiStatusRes] = await Promise.all([
+      const [questionsRes, testsRes, statsRes, aiStatusRes] = await Promise.all([
         axios.get('http://localhost:3000/api/questions/my-questions?limit=1000', { headers }),
-        axios.get('http://localhost:3000/api/questions/stats', { headers }),
+        axios.get('http://localhost:3000/api/tests/teacher-tests', { headers }),
+        axios.get('http://localhost:3000/api/tests/teacher-stats', { headers }),
         axios.get('http://localhost:3000/api/questions/ai-status', { headers })
       ]);
 
       setQuestions(questionsRes.data.questions);
+      setTests(testsRes.data.tests || []);
       setStats(statsRes.data);
       setAiStatus(aiStatusRes.data);
     } catch (error) {
@@ -356,227 +364,234 @@ const TeacherDashboard = ({ user, onLogout }) => {
     setShowQuestions(false);
   };
 
-  const renderOverview = () => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="teacher-overview"
-    >
-      <div className="overview-header">
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="welcome-badge"
-        >
-          <div className="teacher-avatar">
-            {user.profile.firstName.charAt(0)}{user.profile.lastName.charAt(0)}
-          </div>
-          <div className="welcome-text">
-            <h2>Welcome back, {user.profile.firstName}! 👩‍🏫</h2>
-            <p>Ready to inspire minds and create amazing content for your students</p>
-          </div>
-        </motion.div>
-        <div className="current-time">
-          📅 {new Date().toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-          })}
-        </div>
-      </div>
+  // Fetch students for selected grade
+  const fetchStudentsForGrade = async (grade) => {
+    if (!grade) {
+      setGradeStudents([]);
+      return;
+    }
+    
+    try {
+      setLoadingStudents(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/tests/students/${grade}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
 
-      {/* Enhanced Stats Grid */}
-      <motion.div 
-        className="stats-grid"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-      >
-        <motion.div 
-          className="stat-card highlight"
-          whileHover={{ scale: 1.05, rotateY: 5 }}
-          transition={{ type: "spring", stiffness: 300 }}
-        >
-          <div className="stat-icon pulse">📚</div>
-          <div className="stat-info">
-            <span className="stat-number">{stats.overview?.totalQuestions || 0}</span>
-            <span className="stat-label">Total Questions</span>
-            <div className="stat-progress">
-              <div className="progress-bar" style={{width: `${Math.min((stats.overview?.totalQuestions || 0) * 10, 100)}%`}}></div>
-            </div>
-          </div>
-        </motion.div>
-        
-        <motion.div 
-          className="stat-card ai-card"
-          whileHover={{ scale: 1.05, rotateY: -5 }}
-          transition={{ type: "spring", stiffness: 300 }}
-        >
-          <div className="stat-icon ai-icon">🤖</div>
-          <div className="stat-info">
-            <span className="stat-number">{stats.overview?.aiGenerated || 0}</span>
-            <span className="stat-label">AI Generated</span>
-            <div className="ai-badge">{aiStatus.ollamaRunning ? '🚀 Ready' : '⚠️ Offline'}</div>
-          </div>
-        </motion.div>
-        
-        <motion.div 
-          className="stat-card manual-card"
-          whileHover={{ scale: 1.05, rotateY: 5 }}
-          transition={{ type: "spring", stiffness: 300 }}
-        >
-          <div className="stat-icon">✍️</div>
-          <div className="stat-info">
-            <span className="stat-number">{stats.overview?.manuallyCreated || 0}</span>
-            <span className="stat-label">Manually Created</span>
-            <div className="creativity-meter">
-              <span>🎨 {stats.overview?.manuallyCreated > 5 ? 'Creative Pro!' : 'Getting Started'}</span>
-            </div>
-          </div>
-        </motion.div>
-        
-        <motion.div 
-          className={`stat-card status-card ${aiStatus.ollamaRunning ? 'online' : 'offline'}`}
-          whileHover={{ scale: 1.05, rotateY: -5 }}
-          transition={{ type: "spring", stiffness: 300 }}
-        >
-          <div className="stat-icon status-indicator">
-            {aiStatus.ollamaRunning ? '🟢' : '🔴'}
-          </div>
-          <div className="stat-info">
-            <span className="stat-number">{aiStatus.ollamaRunning ? 'Online' : 'Offline'}</span>
-            <span className="stat-label">AI Service Status</span>
-            <div className="status-details">
-              {aiStatus.ollamaRunning ? '⚡ Ready for magic!' : '💤 Install Ollama to activate'}
-            </div>
-          </div>
-        </motion.div>
-      </motion.div>
+      if (response.ok) {
+        const data = await response.json();
+        setGradeStudents(data.students || []);
+      } else {
+        console.error('Failed to fetch students');
+        setGradeStudents([]);
+      }
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      setGradeStudents([]);
+    } finally {
+      setLoadingStudents(false);
+    }
+  };
 
-      {/* Enhanced Quick Actions */}
-      <motion.div 
-        className="quick-actions"
-        initial={{ opacity: 0, y: 30 }}
+  // Handle grade selection
+  const handleGradeSelect = (grade) => {
+    setSelectedGrade(grade);
+    fetchStudentsForGrade(grade);
+  };
+
+  // Get tests for specific grade
+  const getTestsForGrade = (grade) => {
+    return tests.filter(test => test.grade === grade);
+  };
+
+  const renderOverview = () => {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
+        className="teacher-overview"
       >
-        <h3>⚡ Quick Actions</h3>
-        <div className="action-buttons">
-          <motion.button 
-            className="action-btn primary ai-btn"
-            onClick={() => setShowGenerateModal(true)}
-            whileHover={{ scale: 1.05, boxShadow: "0 10px 25px rgba(79, 172, 254, 0.3)" }}
-            whileTap={{ scale: 0.95 }}
-            disabled={!aiStatus.ollamaRunning}
+        <div className="overview-header">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="welcome-badge"
           >
-            <span className="btn-icon">🤖</span>
-            <div className="btn-content">
-              <span className="btn-title">Generate with AI</span>
-              <span className="btn-subtitle">{aiStatus.ollamaRunning ? 'AI Ready!' : 'AI Offline'}</span>
+            <div className="teacher-avatar">
+              {user.profile.firstName.charAt(0)}{user.profile.lastName.charAt(0)}
             </div>
-            {!aiStatus.ollamaRunning && <span className="disabled-overlay">⚠️</span>}
-          </motion.button>
-          
-          <motion.button 
-            className="action-btn secondary manual-btn"
-            onClick={() => setShowCreateModal(true)}
-            whileHover={{ scale: 1.05, boxShadow: "0 10px 25px rgba(250, 112, 154, 0.3)" }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <span className="btn-icon">✍️</span>
-            <div className="btn-content">
-              <span className="btn-title">Create Manually</span>
-              <span className="btn-subtitle">Your creativity unleashed</span>
+            <div className="welcome-text">
+              <h2>Welcome back, {user.profile.firstName}! 👩‍🏫</h2>
+              <p>Ready to inspire minds and create amazing content for your students</p>
             </div>
-          </motion.button>
-          
-          <motion.button 
-            className="action-btn tertiary view-btn"
-            onClick={() => setActiveTab('questions')}
-            whileHover={{ scale: 1.05, boxShadow: "0 10px 25px rgba(255, 255, 255, 0.2)" }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <span className="btn-icon">📋</span>
-            <div className="btn-content">
-              <span className="btn-title">Question Bank</span>
-              <span className="btn-subtitle">{questions.length} questions ready</span>
-            </div>
-          </motion.button>
+          </motion.div>
+          <div className="current-time">
+            📅 {new Date().toLocaleDateString('en-US', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}
+          </div>
         </div>
-      </motion.div>
 
-      {/* Quick Generate Section */}
-      {aiStatus.ollamaRunning && user.profile.assignedGrades && user.profile.subjects && (
+        {/* Teacher Assignment Summary */}
         <motion.div 
-          className="quick-generate-section"
-          initial={{ opacity: 0, x: -30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.8 }}
+          className="assignment-summary"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
         >
-          <h3>🚀 Quick Generate</h3>
-          <p>Generate questions instantly for your assigned subjects</p>
-          <div className="quick-generate-grid">
-            {user.profile.assignedGrades.slice(0, 3).map(grade => 
-              user.profile.subjects.slice(0, 2).map(subject => (
-                <motion.button
-                  key={`${grade}-${subject}`}
-                  className="quick-generate-btn"
-                  onClick={() => handleQuickGenerate(grade, subject)}
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  disabled={loading}
-                >
-                  <div className="quick-gen-content">
-                    <span className="grade-indicator">Grade {grade}</span>
-                    <span className="subject-indicator">{subject}</span>
-                    <span className="action-text">Generate 3 Questions</span>
-                  </div>
-                  {loading ? <span className="loading-spinner">⏳</span> : <span className="generate-icon">⚡</span>}
-                </motion.button>
-              ))
-            )}
+          <h3>📋 Your Teaching Assignments</h3>
+          <div className="assignment-cards">
+            <motion.div 
+              className="assignment-card grades-card"
+              whileHover={{ scale: 1.02, y: -5 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <div className="card-icon">🎓</div>
+              <div className="card-content">
+                <h4>Assigned Grades</h4>
+                <div className="grades-list">
+                  {user.profile.assignedGrades?.length > 0 ? (
+                    user.profile.assignedGrades.map((grade, index) => (
+                      <span key={index} className="grade-badge">Grade {grade}</span>
+                    ))
+                  ) : (
+                    <span className="no-assignment">No grades assigned</span>
+                  )}
+                </div>
+                <p className="card-stats">{user.profile.assignedGrades?.length || 0} grade levels</p>
+              </div>
+            </motion.div>
+
+            <motion.div 
+              className="assignment-card subjects-card"
+              whileHover={{ scale: 1.02, y: -5 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <div className="card-icon">📚</div>
+              <div className="card-content">
+                <h4>Assigned Subjects</h4>
+                <div className="subjects-list">
+                  {user.profile.subjects?.length > 0 ? (
+                    user.profile.subjects.map((subject, index) => (
+                      <span key={index} className="subject-badge">{subject}</span>
+                    ))
+                  ) : (
+                    <span className="no-assignment">No subjects assigned</span>
+                  )}
+                </div>
+                <p className="card-stats">{user.profile.subjects?.length || 0} subjects</p>
+              </div>
+            </motion.div>
+
+            <motion.div 
+              className="assignment-card students-card"
+              whileHover={{ scale: 1.02, y: -5 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <div className="card-icon">👥</div>
+              <div className="card-content">
+                <h4>Total Students</h4>
+                <div className="student-count">
+                  <span className="count-number">{stats.overview?.totalStudents || 0}</span>
+                  <span className="count-label">students across all grades</span>
+                </div>
+                <p className="card-stats">Ready to learn and grow!</p>
+              </div>
+            </motion.div>
           </div>
         </motion.div>
-      )}
 
-      {/* Enhanced Teaching Assignment */}
-      <motion.div 
-        className="assignment-info enhanced"
-        initial={{ opacity: 0, x: -30 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.8 }}
-      >
-        <h3>🎯 Your Teaching Mission</h3>
-        <div className="assignment-details">
-          <div className="assignment-item grades-item">
-            <span className="label">📊 Assigned Grades:</span>
-            <div className="value grades-badges">
-              {user.profile.assignedGrades?.map(grade => (
-                <span key={grade} className="grade-badge">Grade {grade}</span>
-              )) || <span className="not-assigned">None assigned yet</span>}
-            </div>
+        {/* Student Management Section */}
+        <motion.div 
+          className="student-management"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <h3>👥 Student Management</h3>
+          <div className="grade-selector">
+            <label htmlFor="grade-select">Select Grade to View Students:</label>
+            <select 
+              id="grade-select"
+              value={selectedGrade}
+              onChange={(e) => handleGradeSelect(e.target.value)}
+              className="grade-select-dropdown"
+            >
+              <option value="">Choose a grade...</option>
+              {user.profile.assignedGrades?.map((grade, index) => (
+                <option key={index} value={grade}>Grade {grade}</option>
+              ))}
+            </select>
           </div>
-          <div className="assignment-item subjects-item">
-            <span className="label">📚 Teaching Subjects:</span>
-            <div className="value subjects-badges">
-              {user.profile.subjects?.map(subject => (
-                <span key={subject} className="subject-badge">{subject}</span>
-              )) || <span className="not-assigned">None assigned yet</span>}
-            </div>
-          </div>
-          <div className="assignment-item impact-item">
-            <span className="label">🌟 Your Impact:</span>
-            <div className="value impact-stats">
-              <span className="impact-number">{(user.profile.assignedGrades?.length || 0) * (user.profile.subjects?.length || 0)}</span>
-              <span className="impact-text">subject-grade combinations to inspire!</span>
-            </div>
-          </div>
-        </div>
+
+          {selectedGrade && (
+            <motion.div 
+              className="students-display"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="students-header">
+                <h4>📖 Grade {selectedGrade} Students</h4>
+                {loadingStudents ? (
+                  <span className="loading-indicator">⏳ Loading...</span>
+                ) : (
+                  <span className="student-count-badge">{gradeStudents.length} students</span>
+                )}
+              </div>
+
+              {loadingStudents ? (
+                <div className="loading-placeholder">
+                  <div className="loading-spinner">🔄</div>
+                  <p>Loading students...</p>
+                </div>
+              ) : gradeStudents.length > 0 ? (
+                <div className="students-grid">
+                  {gradeStudents.map((student, index) => (
+                    <motion.div 
+                      key={student._id || index}
+                      className="student-card"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index * 0.05 }}
+                      whileHover={{ scale: 1.02, y: -2 }}
+                    >
+                      <div className="student-avatar">
+                        {student.profile?.firstName?.charAt(0) || '?'}
+                        {student.profile?.lastName?.charAt(0) || '?'}
+                      </div>
+                      <div className="student-info">
+                        <h5>{student.profile?.firstName} {student.profile?.lastName}</h5>
+                        <p className="student-username">@{student.username}</p>
+                        <div className="student-stats">
+                          <span className="stat-item">
+                            🏆 {student.profile?.raindrops || 0} raindrops
+                          </span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="no-students">
+                  <div className="no-students-icon">👨‍🎓</div>
+                  <h4>No Students Found</h4>
+                  <p>No students are currently assigned to Grade {selectedGrade}.</p>
+                  <p className="suggestion">Contact your administrator to assign students to this grade.</p>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </motion.div>
       </motion.div>
-    </motion.div>
-  );
+    );
+  };
 
   const renderQuestions = () => (
     <motion.div
@@ -997,16 +1012,6 @@ const TeacherDashboard = ({ user, onLogout }) => {
           </div>
           
           <div className="header-right">
-            <div className="header-stats-mini">
-              <div className="mini-stat">
-                <span className="mini-number">{stats.overview?.totalQuestions || 0}</span>
-                <span className="mini-label">Questions</span>
-              </div>
-              <div className="mini-stat">
-                <span className="mini-number">{user.profile.assignedGrades?.length || 0}</span>
-                <span className="mini-label">Grades</span>
-              </div>
-            </div>
             <motion.button 
               onClick={onLogout} 
               className="logout-btn enhanced"
@@ -1028,13 +1033,16 @@ const TeacherDashboard = ({ user, onLogout }) => {
         transition={{ delay: 0.3, duration: 0.5 }}
       >
         {[
-          { id: 'overview', label: 'Dashboard Overview', icon: '📊', desc: 'Your teaching hub' },
+          { id: 'overview', label: 'Dashboard Overview', icon: '📊', desc: 'Grades, students & tests' },
           { id: 'questions', label: 'Question Bank', icon: '📚', desc: 'Manage questions' },
-          { id: 'tests', label: 'Test Management', icon: '📋', desc: 'Create & schedule tests' }
+          { id: 'tests', label: 'Test Management', icon: '📋', desc: 'Create & manage tests' }
         ].map((tab, index) => (
           <motion.button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => {
+              console.log('Tab clicked:', tab.id);
+              setActiveTab(tab.id);
+            }}
             className={`tab-btn enhanced ${activeTab === tab.id ? 'active' : ''}`}
             whileHover={{ y: -2 }}
             whileTap={{ scale: 0.95 }}
