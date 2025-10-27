@@ -63,7 +63,9 @@ async function migrateQuestions() {
       console.log('📋 Sample question:');
       console.log(`   Subject: ${questions[0].subject}`);
       console.log(`   Difficulty: ${questions[0].difficulty}`);
-      console.log(`   Question: ${questions[0].question.substring(0, 50)}...`);
+      if (questions[0].question) {
+        console.log(`   Question: ${questions[0].question.substring(0, 50)}...`);
+      }
       console.log('');
     }
     
@@ -97,10 +99,27 @@ async function migrateQuestions() {
     console.log('📥 Step 5: Importing questions to Atlas...');
     console.log('   This may take a minute...\n');
     
-    // Remove _id to let MongoDB generate new ones (avoid duplicates)
+    // Remove _id and transform data to match Atlas schema
     const questionsToInsert = questions.map(q => {
-      const { _id, ...questionWithoutId } = q;
-      return questionWithoutId;
+      const { _id, __v, ...questionData} = q;
+      
+      // Transform grade to match enum (handle "1st", "2nd", "3rd", "5th", etc.)
+      if (questionData.grade) {
+        let grade = questionData.grade.toString().toLowerCase();
+        // Extract just the number from formats like "3rd", "5th", etc.
+        grade = grade.replace(/st|nd|rd|th/g, '');
+        // Remove any non-alphanumeric characters except K
+        grade = grade.replace(/[^0-9Kk]/g, '');
+        // Keep K uppercase, numbers as strings
+        questionData.grade = grade.toUpperCase();
+      }
+      
+      // Transform questionType to match enum (fill-in-blank → fill-blank)
+      if (questionData.questionType === 'fill-in-blank') {
+        questionData.questionType = 'fill-blank';
+      }
+      
+      return questionData;
     });
     
     // Insert in batches of 100
