@@ -1,5 +1,9 @@
 # Fix: 404 Error on React Router Navigation in Render
 
+## ⚠️ UPDATE: `_redirects` file doesn't work on Render Static Sites
+
+Render Static Sites don't support `_redirects` or `render.yaml` files. You must configure redirects in the **Render Dashboard**.
+
 ## 🐛 Problem
 
 When deployed to Render as a static site, clicking navigation buttons (like "Let's start learning!") causes 404 errors:
@@ -32,23 +36,59 @@ routes:
     destination: /index.html
 ```
 
-## 🚀 How to Apply
+## 🚀 **CORRECT Solution: Configure in Render Dashboard**
 
-Since the files are in `frontend/public/`, they will be automatically copied to the build folder when you run `npm run build`.
+**The `_redirects` file DOES NOT WORK on Render Static Sites!** You must add the redirect rule in Render's dashboard.
 
-### Option 1: Auto-Deploy (Recommended)
-Render will automatically redeploy when it detects the git push:
-1. ✅ Files already committed and pushed to GitHub
-2. ⏳ Wait 2-3 minutes for Render to detect changes
-3. ✅ Render will rebuild with the new redirect rules
-4. ✅ Test the app again!
+### Step-by-Step Fix:
 
-### Option 2: Manual Deploy
-If auto-deploy doesn't trigger:
-1. Go to Render Dashboard → Your Frontend Service
-2. Click **"Manual Deploy"** → **"Deploy latest commit"**
-3. Wait for build to complete (~2 minutes)
-4. Test again!
+1. **Go to Render Dashboard**: https://dashboard.render.com
+
+2. **Click on your Static Site** (raindrop-game)
+
+3. **Go to "Redirects/Rewrites" tab** (in the left sidebar)
+
+4. **Click "Add Rule"**
+
+5. **Add this configuration:**
+   ```
+   Source:      /*
+   Destination: /index.html
+   Action:      Rewrite
+   ```
+   
+   **Important Details:**
+   - **Source:** `/*` (matches all routes)
+   - **Destination:** `/index.html` (serves React app)
+   - **Action:** Select **"Rewrite"** (NOT "Redirect")
+   - **Status Code:** Leave as default (200)
+
+6. **Click "Save"**
+
+7. **Wait 30 seconds** - No rebuild needed! Takes effect immediately.
+
+8. **Test:** Go to `https://raindrop-game.onrender.com/login` directly
+   - Should show login page, not 404!
+
+### Visual Guide:
+
+```
+┌─────────────────────────────────────────┐
+│ Render Dashboard > raindrop-game        │
+│                                         │
+│ ┌─────────────────────────────────────┐ │
+│ │ Redirects/Rewrites                  │ │
+│ │                                     │ │
+│ │ ┌───────────────────────────────┐   │ │
+│ │ │ Source:       /*              │   │ │
+│ │ │ Destination:  /index.html     │   │ │
+│ │ │ Action:       Rewrite         │   │ │
+│ │ └───────────────────────────────┘   │ │
+│ │                                     │ │
+│ │ [Save]                              │ │
+│ └─────────────────────────────────────┘ │
+└─────────────────────────────────────────┘
+```
 
 ## 🧪 Testing After Deploy
 
@@ -92,14 +132,19 @@ In Render dashboard, add custom redirect rule:
 - Destination: `/index.html`
 - Type: `Rewrite`
 
-## ✅ Status
+## ✅ Correct Steps Checklist
 
-- [x] Created `_redirects` file
-- [x] Created `render.yaml` file  
-- [x] Committed to git
-- [x] Pushed to GitHub
-- [ ] Wait for Render to rebuild (2-3 minutes)
-- [ ] Test navigation in production
+- [ ] Go to Render Dashboard
+- [ ] Click on your Static Site (raindrop-game)
+- [ ] Navigate to "Redirects/Rewrites" tab
+- [ ] Click "Add Rule"
+- [ ] Set Source: `/*`
+- [ ] Set Destination: `/index.html`
+- [ ] Set Action: `Rewrite`
+- [ ] Click "Save"
+- [ ] Wait 30 seconds
+- [ ] Test: Visit `https://raindrop-game.onrender.com/login`
+- [ ] Should see login page! ✅
 
 ## 🎯 Next Steps
 
