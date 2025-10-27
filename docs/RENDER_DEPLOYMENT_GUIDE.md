@@ -452,7 +452,46 @@ JWT_SECRET is not defined
 
 **Check browser console** (F12):
 
-1. **CORS Error**
+1. **Empty Page on Direct Route Navigation (e.g., /login returns 200 OK but empty)**
+```
+Status: 200 OK
+Content-Length: 0
+```
+**Root Cause:**
+- Render Static Sites don't automatically serve `index.html` for all routes
+- When you navigate to `/login`, Render looks for a `login` file, finds nothing, returns empty response
+- React Router never loads to handle the client-side routing
+
+**Fix - Add Rewrite Rule in Render Dashboard:**
+
+**IMPORTANT:** File-based redirects (_redirects, render.yaml) **DO NOT WORK** on Render Static Sites!
+
+**Step-by-step solution:**
+1. Go to **Render Dashboard** → Select your frontend static site (`raindrop-game`)
+2. Click **"Redirects/Rewrites"** tab
+3. Click **"Add Rule"**
+4. Configure exactly:
+   - **Source:** `/*`
+   - **Destination:** `/index.html`
+   - **Action:** `Rewrite` (NOT Redirect!)
+5. Click **"Save"**
+6. Wait 1-2 minutes for auto-redeploy
+7. Test: https://raindrop-game.onrender.com/login should now work
+
+**Why "Rewrite" not "Redirect"?**
+- **Rewrite:** Serves index.html content but keeps URL as `/login` → React Router sees `/login` and renders LoginPage ✅
+- **Redirect:** Changes URL to `/index.html` → Breaks routing ❌
+
+**Testing the fix:**
+```bash
+# Before fix: Returns empty (content-length: 0)
+curl -I https://raindrop-game.onrender.com/login
+
+# After fix: Returns HTML content
+curl https://raindrop-game.onrender.com/login | head -20
+```
+
+2. **CORS Error**
 ```
 Access to fetch blocked by CORS policy
 ```
@@ -461,7 +500,7 @@ Access to fetch blocked by CORS policy
 - Must match exactly (no trailing slash)
 - Redeploy backend after changing
 
-2. **API URL Wrong**
+3. **API URL Wrong**
 ```
 GET https://raindrop-backend.onrender.com/api/undefined 404
 ```
@@ -469,7 +508,7 @@ GET https://raindrop-backend.onrender.com/api/undefined 404
 - Check `REACT_APP_API_URL` includes `/api` at end
 - Redeploy frontend after fixing
 
-3. **Build Failed**
+4. **Build Failed**
 ```
 Module not found: Error: Can't resolve
 ```
