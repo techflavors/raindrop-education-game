@@ -11,10 +11,14 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/raindr
 
 // Security middleware
 app.use(helmet());
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3001',
-  credentials: true
-}));
+
+// CORS configuration - allows frontend to connect to backend
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:3001',
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
 
 // Rate limiting
 const limiter = rateLimit({
