@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import RaindropCup from './RaindropCup';
 import '../styles/TestAttemptNew.css';
 
-const TestAttempt = ({ test, user, onComplete, onBack }) => {
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+
+const TestAttempt = ({ test, user, onComplete, onBack, onNavigateToChallenges }) => {
   // ALL HOOKS MUST BE DECLARED BEFORE ANY CONDITIONAL RETURNS
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -56,7 +59,7 @@ const TestAttempt = ({ test, user, onComplete, onBack }) => {
       });
       console.log('=======================');
       
-      const response = await fetch('http://localhost:3000/api/tests/submit', {
+      const response = await fetch(`${API_URL}/tests/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -148,10 +151,10 @@ const TestAttempt = ({ test, user, onComplete, onBack }) => {
         text: answer.text,
         x: randomX, // Randomized position using shuffled zones
         y: -100 - Math.random() * 100, // Start closer to screen for immediate visibility
-        speed: 1.2 + Math.random() * 0.8, // Slightly faster for immediate action
+        speed: 0.8 + Math.random() * 0.4, // Slower speed (0.8-1.2) to give more time to read
         answered: false,
         rotation: Math.random() * 360,
-        delay: Math.random() * 200, // Very short random delay (0-200ms) for immediate start
+        delay: Math.random() * 300, // Slightly longer delay (0-300ms) for better spacing
         colorIndex: index % colors.length, // Assign color based on index
         stopped: false, // Track if raindrop has stopped at bottom
         wasClickedWhileFalling: false // Track timing bonus eligibility
@@ -181,9 +184,9 @@ const TestAttempt = ({ test, user, onComplete, onBack }) => {
             };
           }
           
-          // Calculate bottom stopping position (canvas height - raindrop height)
-          const canvasHeight = window.innerHeight * 0.4; // Approximate canvas height
-          const bottomPosition = canvasHeight - 80; // Stop before bottom edge
+          // Calculate bottom stopping position - stop at the very bottom of canvas
+          const canvasHeight = window.innerHeight * 0.7; // 70vh canvas height
+          const bottomPosition = canvasHeight - 100; // Stop near bottom edge with small margin
           
           const newY = drop.y + drop.speed;
           const hasReachedBottom = newY >= bottomPosition;
@@ -348,6 +351,9 @@ const TestAttempt = ({ test, user, onComplete, onBack }) => {
 
   // Show completion screen when test is finished
   if (testCompleted) {
+    const timeRemaining = timeLeft;
+    const hasTimeRemaining = timeRemaining > 0;
+    
     return (
       <div className="test-completion-screen">
         <div className="completion-content">
@@ -371,9 +377,36 @@ const TestAttempt = ({ test, user, onComplete, onBack }) => {
               <div className="stat-number">{Math.floor(((test.timeLimit * 60) - timeLeft) / 60)}</div>
               <div className="stat-label">Minutes Taken</div>
             </div>
+            {hasTimeRemaining && (
+              <div className="stat-item highlight">
+                <div className="stat-number">{Math.floor(timeRemaining / 60)}</div>
+                <div className="stat-label">Minutes Remaining</div>
+              </div>
+            )}
           </div>
           
+          {hasTimeRemaining && (
+            <motion.div 
+              className="challenge-prompt"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <div className="challenge-message">
+                <span className="trophy-icon">🏆</span>
+                <h2>Great job finishing early!</h2>
+                <p>Ready to challenge other students with harder questions?</p>
+              </div>
+            </motion.div>
+          )}
+          
           <div className="completion-actions">
+            {hasTimeRemaining && onNavigateToChallenges && (
+              <button className="challenge-others-btn" onClick={onNavigateToChallenges}>
+                <span className="btn-icon">⚔️</span>
+                <span>Challenge Others</span>
+              </button>
+            )}
             <button className="finish-btn" onClick={finishTest}>
               Submit & View Results
             </button>
@@ -397,32 +430,9 @@ const TestAttempt = ({ test, user, onComplete, onBack }) => {
 
   return (
     <div className="test-attempt-game">
-      {/* ROW 1: Raindrops collected, Challenge option, Team progress */}
+      {/* ROW 1: Progress bar and Timer (10%) */}
       <motion.div 
-        className="row-1-header"
-        initial={{ y: -50, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-      >
-        <div className="raindrops-display">
-          <span className="raindrop-icon">💧</span>
-          <span className="raindrop-count">{raindropsCollected}</span>
-          <span className="raindrop-label">Raindrops</span>
-        </div>
-        
-        <div className="challenge-button">
-          <span className="challenge-icon">🏆</span>
-          <span>Challenge Mode</span>
-        </div>
-        
-        <div className="team-progress">
-          <span className="team-icon">👥</span>
-          <span>Team: 75%</span>
-        </div>
-      </motion.div>
-
-      {/* ROW 2: Question progress and Timer */}
-      <motion.div 
-        className="row-2-progress"
+        className="row-1-progress-timer"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
@@ -446,9 +456,9 @@ const TestAttempt = ({ test, user, onComplete, onBack }) => {
         </div>
       </motion.div>
 
-      {/* ROW 3: Show Question */}
+      {/* ROW 2: Show Question (20%) */}
       <motion.div 
-        className="row-3-question"
+        className="row-2-question"
         key={currentQuestionIndex}
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -466,8 +476,18 @@ const TestAttempt = ({ test, user, onComplete, onBack }) => {
         </div>
       </motion.div>
 
-      {/* ROW 4: Canvas with falling raindrops */}
-      <div className="row-4-canvas">
+      {/* ROW 3: Cup (10%) and Canvas with falling raindrops (50%) - 60% total */}
+      <div className="row-3-game-area">
+        {/* Left side: Raindrop Cup */}
+        <div className="cup-sidebar">
+          <RaindropCup 
+            totalRaindrops={raindropsCollected} 
+            showDetails={false}
+            size="small"
+          />
+        </div>
+
+        {/* Right side: Answer Canvas */}
         <div className="raindrop-canvas">
           {/* Falling raindrops with answers */}
           <AnimatePresence>
@@ -485,7 +505,7 @@ const TestAttempt = ({ test, user, onComplete, onBack }) => {
                   transition: drop.stopped ? 'transform 0.5s ease, opacity 0.3s ease' : 'opacity 0.3s ease',
                   opacity: drop.answered ? 0.3 : 1,
                   cursor: drop.answered ? 'not-allowed' : (drop.stopped ? 'pointer' : 'pointer'),
-                  zIndex: drop.stopped ? 15 : 10 // Higher z-index when stopped for better clickability
+                  zIndex: drop.stopped ? 15 : 10
                 }}
               >
                 <div 
@@ -551,31 +571,31 @@ const TestAttempt = ({ test, user, onComplete, onBack }) => {
             )}
           </AnimatePresence>
         </div>
+      </div>
 
-        {/* ROW 5: Navigation buttons */}
-        <div className="navigation-controls">
-          <button 
-            className="nav-btn prev-btn"
-            onClick={previousQuestion}
-            disabled={!canGoPrevious()}
-          >
-            ⬅️ Previous
-          </button>
-          
-          <button 
-            className="nav-btn skip-btn"
-            onClick={skipQuestion}
-          >
-            ⏭️ Skip
-          </button>
-          
-          <button 
-            className="nav-btn back-btn"
-            onClick={onBack}
-          >
-            🏠 Dashboard
-          </button>
-        </div>
+      {/* ROW 4: Navigation buttons (10%) */}
+      <div className="row-4-navigation">
+        <button 
+          className="nav-btn prev-btn"
+          onClick={previousQuestion}
+          disabled={!canGoPrevious()}
+        >
+          ⬅️ Previous
+        </button>
+        
+        <button 
+          className="nav-btn skip-btn"
+          onClick={skipQuestion}
+        >
+          ⏭️ Skip
+        </button>
+        
+        <button 
+          className="nav-btn back-btn"
+          onClick={onBack}
+        >
+          🏠 Dashboard
+        </button>
       </div>
     </div>
   );

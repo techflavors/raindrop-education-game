@@ -115,9 +115,10 @@ router.post('/submit', auth, async (req, res) => {
       testId: testId,
       responses,
       score,
-      raindropsEarned,
-      timeSpent,
-      completedAt: new Date()
+      totalRaindrops: raindropsEarned, // Use totalRaindrops field name
+      totalTimeSpent: timeSpent,
+      submittedAt: new Date(),
+      status: 'completed' // Mark as completed
     });
 
     await testAttempt.save();

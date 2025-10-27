@@ -11,13 +11,16 @@ router.get('/progress', auth, async (req, res) => {
       return res.status(403).json({ success: false, message: 'Access denied. Students only.' });
     }
 
-    // Get all test attempts for this student
-    const attempts = await TestAttempt.find({ studentId: req.user._id })
+    // Get all completed test attempts for this student
+    const attempts = await TestAttempt.find({ 
+      studentId: req.user._id,
+      status: 'completed'
+    })
       .populate('testId', 'title subject grade')
-      .sort({ completedAt: -1 });
+      .sort({ submittedAt: -1 });
 
     // Calculate total raindrops
-    const totalRaindrops = attempts.reduce((sum, attempt) => sum + (attempt.raindropsEarned || 0), 0);
+    const totalRaindrops = attempts.reduce((sum, attempt) => sum + (attempt.totalRaindrops || 0), 0);
 
     // Calculate current level (50 raindrops per level)
     const currentLevel = Math.floor(totalRaindrops / 50) + 1;
@@ -101,8 +104,11 @@ router.get('/leaderboard', auth, async (req, res) => {
     // Get test attempts for all students in grade
     const leaderboardData = await Promise.all(
       studentsInGrade.map(async (student) => {
-        const attempts = await TestAttempt.find({ studentId: student._id });
-        const totalRaindrops = attempts.reduce((sum, attempt) => sum + (attempt.raindropsEarned || 0), 0);
+        const attempts = await TestAttempt.find({ 
+          studentId: student._id,
+          status: 'completed'
+        });
+        const totalRaindrops = attempts.reduce((sum, attempt) => sum + (attempt.totalRaindrops || 0), 0);
         const averageScore = attempts.length > 0 
           ? Math.round(attempts.reduce((sum, attempt) => sum + attempt.score, 0) / attempts.length)
           : 0;

@@ -9,6 +9,102 @@
   overflow: hidden;
 }
 
+/* ROW 1: Progress bar and Timer - 8% */
+.row-1-progress-timer {
+  height: 8vh;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 30px;
+  padding: 10px 30px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 0 0 25px 25px; /* Curved bottom only */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  margin: 0 15px 10px 15px;
+}
+
+/* ROW 2: Question - 12% (compact for 2-3 lines) */
+.row-2-question {
+  height: 12vh;
+  min-height: 80px;
+  max-height: 120px;
+  padding: 12px 30px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  margin: 0 15px 10px 15px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+}
+
+/* ROW 3: Game Area (Cup + Canvas) - 70% (more space for answers) */
+.row-3-game-area {
+  height: 70vh;
+  display: flex;
+  gap: 15px;
+  margin: 0 15px 10px 15px;
+}
+
+/* Cup Sidebar - 10% of screen width */
+.cup-sidebar {
+  width: 15%;
+  min-width: 150px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cup-sidebar .raindrop-cup {
+  width: 100%;
+  margin: 0;
+}
+
+.cup-sidebar .cup-container {
+  background: transparent;
+  padding: 10px;
+  margin: 0;
+}
+
+/* Raindrop Canvas - 50% of screen width */
+.raindrop-canvas {
+  flex: 1;
+  position: relative;
+  background: linear-gradient(180deg, 
+    rgba(135, 206, 235, 0.3) 0%, 
+    rgba(152, 251, 152, 0.3) 50%, 
+    rgba(255, 228, 181, 0.3) 100%
+  );
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: inset 0 4px 20px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(5px);
+}
+
+/* ROW 4: Navigation - 10% */
+.row-4-navigation {
+  height: 10vh;
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 30px;
+  margin: 0 15px 15px 15px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 25px 25px 0 0; /* Curved top only */
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+}
+
 .test-attempt-error {
   display: flex;
   flex-direction: column;
@@ -31,6 +127,9 @@
 }
 
 /* ROW 1: Header with raindrops, challenge, team progress */
+/* ===== DEPRECATED OLD STYLES - Keeping for reference ===== */
+/* These were replaced by new row-1-progress-timer, row-2-question, row-3-game-area, row-4-navigation */
+/*
 .row-1-header {
   display: flex;
   justify-content: space-between;
@@ -55,19 +154,6 @@
   box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
 }
 
-.raindrop-icon {
-  font-size: 1.5rem;
-}
-
-.raindrop-count {
-  font-size: 1.3rem;
-  font-weight: 800;
-}
-
-.raindrop-label {
-  font-size: 0.9rem;
-}
-
 .challenge-button {
   display: flex;
   align-items: center;
@@ -82,15 +168,6 @@
   box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
 }
 
-.challenge-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
-}
-
-.challenge-icon {
-  font-size: 1.2rem;
-}
-
 .team-progress {
   display: flex;
   align-items: center;
@@ -103,16 +180,12 @@
   box-shadow: 0 4px 15px rgba(152, 251, 152, 0.3);
 }
 
-.team-icon {
-  font-size: 1.2rem;
-}
-
-/* ROW 2: Progress and Timer */
 .row-2-progress {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
-  padding: 15px 30px;
+  gap: 30px;
+  padding: 10px 30px;
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(10px);
   border-radius: 20px;
@@ -120,22 +193,42 @@
   margin: 0 15px 10px 15px;
 }
 
-.question-progress {
+.row-3-question {
+  padding: 20px 30px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  margin: 0 15px 10px 15px;
+  text-align: center;
+}
+
+.row-4-canvas {
   flex: 1;
-  margin-right: 30px;
+  display: flex;
+  flex-direction: column;
+  margin: 0 15px 15px 15px;
+/* ===== ACTIVE STYLES ===== */
+
+/* Progress and Timer Components (used in row-1-progress-timer) */
+.question-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 300px;
 }
 
 .progress-text {
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 700;
   color: #2E86AB;
-  margin-bottom: 8px;
-  text-align: center;
+  margin: 0;
+  text-align: left;
 }
 
 .progress-bar {
   width: 100%;
-  height: 12px;
+  height: 14px;
   background: rgba(46, 134, 171, 0.2);
   border-radius: 10px;
   overflow: hidden;
@@ -151,15 +244,14 @@
 .timer {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   background: linear-gradient(45deg, #FF6B6B, #FF8E53);
   color: white;
-  padding: 15px 25px;
-  border-radius: 20px;
+  padding: 12px 24px;
+  border-radius: 25px;
   font-weight: 700;
   box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
-  min-width: 140px;
-  justify-content: center;
+  white-space: nowrap;
 }
 
 .timer.warning {
@@ -172,42 +264,43 @@
 }
 
 .timer-icon {
-  font-size: 1.2rem;
+  font-size: 1.4rem;
+  line-height: 1;
 }
 
 .timer-text {
-  font-size: 1.2rem;
+  font-size: 1.3rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
-/* ROW 3: Question Display */
-.row-3-question {
-  padding: 20px 30px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  margin: 0 15px 10px 15px;
-  text-align: center;
-}
-
+/* Question Display Components (used in row-2-question) */
 .question-content {
-  max-width: 800px;
+  max-width: 100%;
   margin: 0 auto;
 }
 
 .question-text {
-  font-size: 1.6rem;
-  color: #2E86AB;
-  margin: 0 0 15px 0;
-  font-weight: 600;
-  line-height: 1.4;
+  font-size: 1.2rem;
+  color: #DC143C;
+  margin: 0;
+  font-weight: 700;
+  line-height: 1.3;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+  display: -webkit-box;
+  -webkit-line-clamp: 3; /* Limit to 3 lines */
+  -webkit-box-orient: vertical;
+  line-clamp: 3; /* Standard property */
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .question-image {
-  max-width: 400px;
-  max-height: 200px;
-  border-radius: 15px;
+  max-width: 200px;
+  max-height: 80px;
+  border-radius: 10px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  margin-top: 5px;
 }
 
 /* ROW 4: Canvas with falling raindrops */
@@ -243,13 +336,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: linear-gradient(45deg, #4A90E2, #7BB3F0);
-  color: white;
+  background: linear-gradient(135deg, #2C3E50, #34495E);
+  color: #FFFFFF;
   padding: 12px 16px;
   border-radius: 20px;
-  box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
+  box-shadow: 0 6px 20px rgba(44, 62, 80, 0.5);
   transition: all 0.3s ease;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.4);
   min-width: 120px;
   max-width: 160px;
   text-align: center;
@@ -258,9 +351,10 @@
 }
 
 .falling-raindrop:hover .raindrop-content {
-  background: linear-gradient(45deg, #7BB3F0, #A8D5FF);
+  background: linear-gradient(135deg, #3498DB, #5DADE2);
   transform: scale(1.1);
-  box-shadow: 0 8px 25px rgba(74, 144, 226, 0.6);
+  box-shadow: 0 8px 25px rgba(52, 152, 219, 0.6);
+  color: #FFFFFF;
 }
 
 .falling-raindrop.answered .raindrop-content {
@@ -292,10 +386,12 @@
 }
 
 .drop-text {
-  font-weight: 600;
-  font-size: 0.9rem;
+  font-weight: 700;
+  font-size: 1rem;
   word-wrap: break-word;
   text-align: center;
+  color: #FF0000;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 /* Feedback Overlay */
@@ -551,11 +647,94 @@
   margin-top: 5px;
 }
 
+.stat-item.highlight {
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  border-color: #FFD700;
+}
+
+.stat-item.highlight .stat-number,
+.stat-item.highlight .stat-label {
+  color: white;
+}
+
+/* Challenge Prompt */
+.challenge-prompt {
+  background: linear-gradient(135deg, #FFF9E6, #FFFACD);
+  border: 3px solid #FFD700;
+  border-radius: 20px;
+  padding: 25px;
+  margin: 20px 0;
+  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.3);
+}
+
+.challenge-message {
+  text-align: center;
+}
+
+.trophy-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 10px;
+  animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.challenge-message h2 {
+  color: #FF8C00;
+  margin: 10px 0;
+  font-size: 1.5rem;
+}
+
+.challenge-message p {
+  color: #666;
+  font-size: 1.1rem;
+  margin: 5px 0 0 0;
+}
+
 .completion-actions {
   display: flex;
   gap: 20px;
   justify-content: center;
   margin-top: 30px;
+  flex-wrap: wrap;
+}
+
+.challenge-others-btn {
+  padding: 18px 35px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  box-shadow: 0 6px 20px rgba(255, 140, 0, 0.4);
+  background: linear-gradient(135deg, #FFD700, #FF8C00);
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.challenge-others-btn:hover {
+  background: linear-gradient(135deg, #FFA500, #FF6347);
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 10px 30px rgba(255, 140, 0, 0.6);
+  animation: none;
+}
+
+.challenge-others-btn .btn-icon {
+  font-size: 1.3rem;
 }
 
 .finish-btn, .dashboard-btn {

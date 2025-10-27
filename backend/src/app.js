@@ -32,11 +32,15 @@ const authRoutes = require('./routes/auth');
 const questionRoutes = require('./routes/questions');
 const testRoutes = require('./routes/tests');
 const studentRoutes = require('./routes/student');
+const challengeRoutes = require('./routes/challenges');
+const battleRoutes = require('./routes/battles');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/tests', testRoutes);
 app.use('/api/student', studentRoutes);
+app.use('/api/challenges', challengeRoutes);
+app.use('/api/battles', battleRoutes);
 
 // Database connection
 mongoose.connect(MONGODB_URI, {

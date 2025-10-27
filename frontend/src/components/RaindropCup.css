@@ -1,0 +1,501 @@
+.raindrop-cup {
+  position: relative;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  color: white;
+}
+
+.raindrop-cup.large {
+  width: 300px;
+}
+
+.raindrop-cup.medium {
+  width: 250px;
+}
+
+.raindrop-cup.small {
+  width: 150px;
+}
+
+/* Falling Drops Animation */
+.falling-drop {
+  position: absolute;
+  font-size: 20px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.raindrop-cup.medium .falling-drop {
+  font-size: 16px;
+}
+
+.raindrop-cup.small .falling-drop {
+  font-size: 12px;
+}
+
+/* Cup Container */
+.cup-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.raindrop-cup.medium .cup-container {
+  padding: 15px;
+}
+
+.raindrop-cup.small .cup-container {
+  padding: 10px;
+}
+
+.cup-svg {
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.3));
+  margin-bottom: 15px;
+}
+
+.cup-outline {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.cup-fill {
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+}
+
+.cup-handle {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Level Indicator */
+.level-indicator {
+  margin-bottom: 10px;
+}
+
+.level-badge {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.level-badge.level-0 {
+  background: linear-gradient(45deg, #87CEEB, #4682B4);
+  color: white;
+}
+
+.level-badge.level-1 {
+  background: linear-gradient(45deg, #4682B4, #1E90FF);
+  color: white;
+}
+
+.level-badge.level-2 {
+  background: linear-gradient(45deg, #1E90FF, #0066CC);
+  color: white;
+}
+
+.level-badge.level-3 {
+  background: linear-gradient(45deg, #0066CC, #003F7F);
+  color: white;
+}
+
+.level-badge.level-4 {
+  background: linear-gradient(45deg, #003F7F, #002B59);
+  color: white;
+}
+
+.level-badge.level-5 {
+  background: linear-gradient(45deg, #002B59, #001A3D);
+  color: gold;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+.raindrop-cup.small .level-badge {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+/* Raindrop Counter */
+.raindrop-counter {
+  text-align: center;
+}
+
+.raindrop-count {
+  font-size: 24px;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  color: #4A90E2; /* Blue color */
+}
+
+.raindrop-cup.medium .raindrop-count {
+  font-size: 20px;
+}
+
+.raindrop-cup.small .raindrop-count {
+  font-size: 16px;
+}
+
+/* Cup Details */
+.cup-details {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.raindrop-cup.small .cup-details {
+  padding: 15px;
+}
+
+.progress-info {
+  margin-bottom: 20px;
+}
+
+.progress-bar-container {
+  margin-bottom: 15px;
+}
+
+.progress-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.raindrop-cup.small .progress-labels {
+  font-size: 12px;
+}
+
+.current-progress {
+  color: #00bfff;
+  font-weight: 600;
+}
+
+.next-level {
+  color: #ffa500;
+  font-weight: 600;
+}
+
+.progress-bar {
+  height: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.raindrop-cup.small .progress-bar {
+  height: 8px;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 1s ease-out;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.raindrops-needed {
+  text-align: center;
+  font-size: 12px;
+  opacity: 0.8;
+  font-style: italic;
+}
+
+.raindrop-cup.small .raindrops-needed {
+  font-size: 10px;
+}
+
+/* Unlock Info */
+.unlock-info h4 {
+  color: #00bfff;
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+.raindrop-cup.small .unlock-info h4 {
+  font-size: 14px;
+}
+
+.unlock-info p {
+  margin-bottom: 15px;
+  opacity: 0.9;
+  line-height: 1.4;
+  font-size: 14px;
+}
+
+.raindrop-cup.small .unlock-info p {
+  font-size: 12px;
+}
+
+/* Level Up Notification */
+.level-up-notification {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(135deg, #ffd700, #ff6b6b);
+  border-radius: 20px;
+  padding: 30px;
+  text-align: center;
+  z-index: 20;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.raindrop-cup.small .level-up-notification {
+  padding: 20px;
+}
+
+.level-up-content {
+  position: relative;
+  z-index: 2;
+}
+
+.level-up-icon {
+  font-size: 48px;
+  margin-bottom: 15px;
+}
+
+.raindrop-cup.small .level-up-icon {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+.level-up-text h3 {
+  margin: 0 0 10px 0;
+  font-size: 24px;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.raindrop-cup.small .level-up-text h3 {
+  font-size: 18px;
+}
+
+.level-up-text p {
+  margin: 5px 0;
+  font-size: 16px;
+  color: white;
+  opacity: 0.9;
+}
+
+.raindrop-cup.small .level-up-text p {
+  font-size: 14px;
+}
+
+.unlock-text {
+  font-weight: 600;
+  color: #ffff00 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.level-up-sparkles {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 24px;
+  opacity: 0.8;
+}
+
+.raindrop-cup.small .level-up-sparkles {
+  font-size: 18px;
+  top: 5px;
+  right: 5px;
+}
+
+/* Achievement Milestones */
+.achievement-milestones {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  padding: 20px;
+}
+
+.raindrop-cup.small .achievement-milestones {
+  padding: 15px;
+}
+
+.achievement-milestones h4 {
+  color: #00bfff;
+  margin-bottom: 15px;
+  font-size: 16px;
+  text-align: center;
+}
+
+.raindrop-cup.small .achievement-milestones h4 {
+  font-size: 14px;
+}
+
+.milestones-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.milestone {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.raindrop-cup.small .milestone {
+  gap: 8px;
+  padding: 8px;
+}
+
+.milestone.achieved {
+  background: rgba(0, 255, 127, 0.2);
+  border: 1px solid rgba(0, 255, 127, 0.3);
+}
+
+.milestone.locked {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  opacity: 0.6;
+}
+
+.milestone-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.raindrop-cup.small .milestone-icon {
+  font-size: 16px;
+}
+
+.milestone-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.milestone-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: white;
+}
+
+.raindrop-cup.small .milestone-name {
+  font-size: 12px;
+}
+
+.milestone-requirement {
+  font-size: 12px;
+  opacity: 0.8;
+  color: #00bfff;
+}
+
+.raindrop-cup.small .milestone-requirement {
+  font-size: 10px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .raindrop-cup.large {
+    width: 250px;
+  }
+  
+  .raindrop-cup.medium {
+    width: 200px;
+  }
+  
+  .cup-details,
+  .achievement-milestones {
+    padding: 15px;
+  }
+  
+  .level-up-notification {
+    padding: 20px;
+    margin: 10px;
+  }
+  
+  .progress-labels {
+    font-size: 12px;
+  }
+  
+  .unlock-info h4 {
+    font-size: 14px;
+  }
+  
+  .unlock-info p {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .raindrop-cup.large,
+  .raindrop-cup.medium {
+    width: 180px;
+  }
+  
+  .cup-container {
+    padding: 15px;
+  }
+  
+  .cup-details,
+  .achievement-milestones {
+    padding: 12px;
+  }
+  
+  .raindrop-count {
+    font-size: 18px;
+  }
+  
+  .level-up-text h3 {
+    font-size: 20px;
+  }
+  
+  .level-up-text p {
+    font-size: 14px;
+  }
+  
+  .milestone {
+    padding: 8px;
+  }
+  
+  .milestone-name {
+    font-size: 12px;
+  }
+  
+  .milestone-requirement {
+    font-size: 10px;
+  }
+}
+
+/* Animation Keyframes */
+@keyframes fillUp {
+  from {
+    height: 0%;
+  }
+  to {
+    height: var(--fill-height);
+  }
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+.level-up-sparkles {
+  animation: sparkle 1s ease-in-out infinite;
+}
