@@ -5,6 +5,8 @@ import AdminDashboard from './AdminDashboard';
 import TeacherDashboard from './TeacherDashboard';
 import StudentDashboard from './StudentDashboard';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+
 function Dashboard() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -22,7 +24,7 @@ function Dashboard() {
         return;
       }
 
-      const response = await fetch('http://localhost:3000/api/auth/me', {
+      const response = await fetch(`${API_URL}/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

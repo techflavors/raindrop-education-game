@@ -111,11 +111,12 @@ function WelcomePage() {
 function APIStatus() {
   const [status, setStatus] = React.useState('checking');
   const [apiData, setApiData] = React.useState(null);
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
 
   React.useEffect(() => {
     const checkAPI = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/health');
+        const response = await fetch(`${API_URL}/health`);
         const data = await response.json();
         setApiData(data);
         setStatus('connected');

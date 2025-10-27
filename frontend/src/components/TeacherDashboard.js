@@ -4,6 +4,8 @@ import axios from 'axios';
 import TestManagement from './TestManagement';
 import TestCreation from './TestCreation';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+
 const TeacherDashboard = ({ user, onLogout }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [questions, setQuestions] = useState([]);
@@ -121,10 +123,10 @@ const TeacherDashboard = ({ user, onLogout }) => {
       const headers = { Authorization: `Bearer ${token}` };
 
       const [questionsRes, testsRes, statsRes, aiStatusRes] = await Promise.all([
-        axios.get('http://localhost:3000/api/questions/my-questions?limit=1000', { headers }),
-        axios.get('http://localhost:3000/api/tests/teacher-tests', { headers }),
-        axios.get('http://localhost:3000/api/tests/teacher-stats', { headers }),
-        axios.get('http://localhost:3000/api/questions/ai-status', { headers })
+        axios.get(`${API_URL}/questions/my-questions?limit=1000`, { headers }),
+        axios.get(`${API_URL}/tests/teacher-tests`, { headers }),
+        axios.get(`${API_URL}/tests/teacher-stats`, { headers }),
+        axios.get(`${API_URL}/questions/ai-status`, { headers })
       ]);
 
       setQuestions(questionsRes.data.questions);
@@ -163,7 +165,7 @@ const TeacherDashboard = ({ user, onLogout }) => {
       setGenerationStep('Reviewing question quality...');
       
       const response = await axios.post(
-        'http://localhost:3000/api/questions/generate',
+        `${API_URL}/questions/generate`,
         generateForm,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -203,7 +205,7 @@ const TeacherDashboard = ({ user, onLogout }) => {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        'http://localhost:3000/api/questions/create',
+        `${API_URL}/questions/create`,
         createForm,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -240,7 +242,7 @@ const TeacherDashboard = ({ user, onLogout }) => {
     try {
       const token = localStorage.getItem('token');
       await axios.delete(
-        `http://localhost:3000/api/questions/${questionId}`,
+        `${API_URL}/questions/${questionId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -257,7 +259,7 @@ const TeacherDashboard = ({ user, onLogout }) => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.post(
-        'http://localhost:3000/api/questions/generate',
+        `${API_URL}/questions/generate`,
         { grade, subject, difficulty: 'beginner', count: 3 },
         { headers: { Authorization: `Bearer ${token}` } }
       );
