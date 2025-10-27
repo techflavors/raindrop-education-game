@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Raindrop Diagnostic</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f0f0f0;
+    }
+    .test {
+      background: white;
+      padding: 20px;
+      margin: 10px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .success { border-left: 4px solid #4CAF50; }
+    .error { border-left: 4px solid #f44336; }
+    .info { border-left: 4px solid #2196F3; }
+    button {
+      background: #2196F3;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover { background: #1976D2; }
+    #results { margin-top: 20px; }
+    pre {
+      background: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌧️ Raindrop Game Diagnostic</h1>
+  
+  <div class="test info">
+    <h2>Current Page Info</h2>
+    <p><strong>URL:</strong> <span id="currentUrl"></span></p>
+    <p><strong>Protocol:</strong> <span id="protocol"></span></p>
+    <p><strong>Host:</strong> <span id="host"></span></p>
+  </div>
+
+  <div class="test info">
+    <h2>Tests</h2>
+    <button onclick="testFrontend()">Test Frontend Loading</button>
+    <button onclick="testBackendConnection()">Test Backend API</button>
+    <button onclick="testEnvironment()">Check Environment</button>
+    <button onclick="runAllTests()">Run All Tests</button>
+  </div>
+
+  <div id="results"></div>
+
+  <script>
+    // Display current page info
+    document.getElementById('currentUrl').textContent = window.location.href;
+    document.getElementById('protocol').textContent = window.location.protocol;
+    document.getElementById('host').textContent = window.location.host;
+
+    const resultsDiv = document.getElementById('results');
+
+    function addResult(title, status, message, details = '') {
+      const div = document.createElement('div');
+      div.className = `test ${status}`;
+      div.innerHTML = `
+        <h3>${status === 'success' ? '✅' : status === 'error' ? '❌' : 'ℹ️'} ${title}</h3>
+        <p>${message}</p>
+        ${details ? `<pre>${details}</pre>` : ''}
+      `;
+      resultsDiv.appendChild(div);
+    }
+
+    function testFrontend() {
+      resultsDiv.innerHTML = '';
+      addResult('Frontend Test', 'info', 'Checking if this page loads...');
+      
+      // Check if React app exists
+      const hasReactRoot = document.getElementById('root') !== null;
+      addResult(
+        'React Root Element',
+        hasReactRoot ? 'success' : 'error',
+        hasReactRoot ? 'Root div exists' : 'Root div not found'
+      );
+
+      // Check if React is loaded
+      const hasReact = typeof React !== 'undefined';
+      addResult(
+        'React Library',
+        hasReact ? 'success' : 'error',
+        hasReact ? 'React is loaded' : 'React not loaded'
+      );
+    }
+
+    async function testBackendConnection() {
+      resultsDiv.innerHTML = '';
+      
+      // Try different backend URLs
+      const backendUrls = [
+        'https://raindrop-backend.onrender.com',
+        'https://raindrop-battle-backend.onrender.com',
+        'http://localhost:3000'
+      ];
+
+      addResult('Backend Test', 'info', 'Testing backend connections...');
+
+      for (const url of backendUrls) {
+        try {
+          const response = await fetch(`${url}/health`, { 
+            method: 'GET',
+            mode: 'cors'
+          });
+          const data = await response.json();
+          
+          addResult(
+            `Backend: ${url}`,
+            'success',
+            'Backend is reachable!',
+            JSON.stringify(data, null, 2)
+          );
+          break; // Stop if we found working backend
+        } catch (error) {
+          addResult(
+            `Backend: ${url}`,
+            'error',
+            'Backend not reachable',
+            error.message
+          );
+        }
+      }
+    }
+
+    function testEnvironment() {
+      resultsDiv.innerHTML = '';
+      
+      addResult('Environment Check', 'info', 'Checking environment variables...');
+      
+      const env = {
+        'REACT_APP_API_URL': process.env.REACT_APP_API_URL || 'Not set (will use localhost:3000)',
+        'NODE_ENV': process.env.NODE_ENV || 'Not set',
+        'Location': window.location.href
+      };
+
+      addResult(
+        'Environment Variables',
+        'info',
+        'Current environment:',
+        JSON.stringify(env, null, 2)
+      );
+    }
+
+    async function runAllTests() {
+      resultsDiv.innerHTML = '';
+      addResult('Running All Tests', 'info', 'Please wait...');
+      
+      testFrontend();
+      await new Promise(r => setTimeout(r, 500));
+      
+      await testBackendConnection();
+      await new Promise(r => setTimeout(r, 500));
+      
+      testEnvironment();
+    }
+
+    // Auto-run tests on load
+    window.addEventListener('load', () => {
+      setTimeout(runAllTests, 500);
+    });
+  </script>
+</body>
+</html>
