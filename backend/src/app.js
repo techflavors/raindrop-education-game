@@ -6,6 +6,12 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
+
+// When the app is behind a proxy (Render, Heroku, etc.), Express needs
+// to trust the proxy so that middleware like express-rate-limit can
+// correctly read the client's IP from the X-Forwarded-For header.
+// Setting to `1` trusts the first proxy in front of the app.
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/raindrop-battle';
 
