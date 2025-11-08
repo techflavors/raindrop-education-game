@@ -4,6 +4,17 @@ import './BattleArena.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
 
+// Safe helper to parse stored user; protects against missing or malformed data
+const getStoredUser = () => {
+  try {
+    const raw = localStorage.getItem('user');
+    return raw ? JSON.parse(raw) : null;
+  } catch (err) {
+    console.error('Failed to parse stored user:', err);
+    return null;
+  }
+};
+
 const BattleArena = ({ battleId, onBattleComplete }) => {
   const [battle, setBattle] = useState(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -70,10 +81,11 @@ const BattleArena = ({ battleId, onBattleComplete }) => {
       setBattleStatus(data.battle.status);
       
       // Set current question based on progress
-      const myAnswersCount = data.battle.participants.find(p => 
-        p.studentId._id === JSON.parse(localStorage.getItem('user'))._id
-      )?.answers?.length || 0;
-      
+      const storedUser = getStoredUser();
+      const myAnswersCount = storedUser
+        ? data.battle.participants.find(p => p.studentId._id === storedUser._id)?.answers?.length || 0
+        : 0;
+
       setCurrentQuestionIndex(myAnswersCount);
       setLoading(false);
     } catch (error) {
@@ -253,8 +265,8 @@ const BattleArena = ({ battleId, onBattleComplete }) => {
   }
 
   const currentQuestion = battle.challengeId?.questions?.[currentQuestionIndex];
-  const user = JSON.parse(localStorage.getItem('user'));
-  const opponent = battle.participants.find(p => p.studentId._id !== user._id);
+  const user = getStoredUser();
+  const opponent = user ? battle.participants.find(p => p.studentId._id !== user._id) : battle.participants[0];
   const totalQuestions = battle.challengeId?.questions?.length || 0;
 
   return (

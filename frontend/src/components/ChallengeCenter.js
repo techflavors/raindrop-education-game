@@ -5,6 +5,17 @@ import './ChallengeCenter.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
 
+// Safe helper to parse stored user; protects against missing or malformed data
+const getStoredUser = () => {
+  try {
+    const raw = localStorage.getItem('user');
+    return raw ? JSON.parse(raw) : null;
+  } catch (err) {
+    console.error('Failed to parse stored user:', err);
+    return null;
+  }
+};
+
 const ChallengeCenter = () => {
   const [activeTab, setActiveTab] = useState('browse');
   const [availableChallengers, setAvailableChallengers] = useState([]);
@@ -448,10 +459,10 @@ const ChallengeCenter = () => {
               ) : (
                 <div className="history-list">
                   {challengeHistory.map(challenge => {
-                    const user = JSON.parse(localStorage.getItem('user'));
-                    const isChallenger = challenge.challenger._id === user._id;
+                    const user = getStoredUser();
+                    const isChallenger = user ? challenge.challenger._id === user._id : false;
                     const opponent = isChallenger ? challenge.challenged : challenge.challenger;
-                    const isWinner = challenge.winner?._id === user._id;
+                    const isWinner = user ? challenge.winner?._id === user._id : false;
                     
                     return (
                       <motion.div
