@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
+// Use environment variable for API base URL (fallback to localhost)
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+
 // Add CSS animation for the success icon
 const pulseAnimation = `
   @keyframes pulse {
