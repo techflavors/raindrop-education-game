@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+
 const TestManagement = ({ user, onCreateTest }) => {
   const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +46,7 @@ const TestManagement = ({ user, onCreateTest }) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3000/api/tests/teacher-tests', {
+      const response = await fetch(`${API_URL}/tests/teacher-tests`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -67,7 +69,7 @@ const TestManagement = ({ user, onCreateTest }) => {
   const handleScheduleTest = async (testId, scheduleData) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3000/api/tests/${testId}/schedule`, {
+      const response = await fetch(`${API_URL}/tests/${testId}/schedule`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -96,7 +98,7 @@ const TestManagement = ({ user, onCreateTest }) => {
       setError('');
       
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3000/api/tests/${testId}`, {
+      const response = await fetch(`${API_URL}/tests/${testId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -138,7 +140,7 @@ const TestManagement = ({ user, onCreateTest }) => {
   const handleEditTest = async (testId, updatedData) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3000/api/tests/${testId}`, {
+      const response = await fetch(`${API_URL}/tests/${testId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -165,7 +167,7 @@ const TestManagement = ({ user, onCreateTest }) => {
   const fetchTestAnalytics = async (testId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3000/api/tests/${testId}/stats`, {
+      const response = await fetch(`${API_URL}/tests/${testId}/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -187,7 +189,7 @@ const TestManagement = ({ user, onCreateTest }) => {
   const handleDuplicateTest = async (testId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3000/api/tests/${testId}/duplicate`, {
+      const response = await fetch(`${API_URL}/tests/${testId}/duplicate`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -897,7 +899,7 @@ const TestManagement = ({ user, onCreateTest }) => {
       
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:3000/api/tests/${selectedTest._id}/questions/${questionId}`, {
+        const response = await fetch(`${API_URL}/tests/${selectedTest._id}/questions/${questionId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,
