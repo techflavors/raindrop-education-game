@@ -64,7 +64,7 @@ const TestCreation = ({ user, onBack, onTestCreated }) => {
   const fetchQuestionPreview = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:3000/api/tests/questions/preview', {
+      const response = await axios.get(`${API_URL}/tests/questions/preview`, {
         params: {
           grade: formData.grade,
           subject: formData.subject,
@@ -89,7 +89,7 @@ const TestCreation = ({ user, onBack, onTestCreated }) => {
   const fetchStudents = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:3000/api/tests/students/${formData.grade}`, {
+      const response = await axios.get(`${API_URL}/tests/students/${formData.grade}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -164,7 +164,7 @@ const TestCreation = ({ user, onBack, onTestCreated }) => {
       }
 
       const token = localStorage.getItem('token');
-      const response = await axios.post('http://localhost:3000/api/tests/create', formData, {
+      const response = await axios.post(`${API_URL}/tests/create`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'

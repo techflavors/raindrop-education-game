@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+
 const AdminDashboard = () => {
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
@@ -68,7 +70,7 @@ const AdminDashboard = () => {
 
   const loadDashboardStats = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/auth/stats', {
+      const response = await fetch(`${API_URL}/auth/stats`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -101,7 +103,7 @@ const AdminDashboard = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/auth/users', {
+      const response = await fetch(`${API_URL}/auth/users`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -193,7 +195,7 @@ const AdminDashboard = () => {
         delete userData.assignedStudents;
       }
 
-      const response = await fetch('http://localhost:3000/api/auth/register', {
+      const response = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -307,7 +309,7 @@ const AdminDashboard = () => {
         delete userData.password;
       }
 
-      const response = await fetch(`http://localhost:3000/api/auth/users/${selectedUser._id}`, {
+      const response = await fetch(`${API_URL}/auth/users/${selectedUser._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -338,7 +340,7 @@ const AdminDashboard = () => {
     setMessage('');
 
     try {
-      const response = await fetch(`http://localhost:3000/api/auth/users/${selectedUser._id}`, {
+      const response = await fetch(`${API_URL}/auth/users/${selectedUser._id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`

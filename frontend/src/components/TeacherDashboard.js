@@ -376,7 +376,7 @@ const TeacherDashboard = ({ user, onLogout }) => {
     try {
       setLoadingStudents(true);
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/tests/students/${grade}`, {
+      const response = await fetch(`${API_URL}/tests/students/${grade}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
